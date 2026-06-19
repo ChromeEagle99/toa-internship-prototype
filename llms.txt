@@ -1,0 +1,170 @@
+# PRIZM 4.0
+
+> A DSTA design system. Serves command-and-control (C3) and enterprise products. Built on Base UI and Tailwind CSS. Distributed via copy-paste, engineered for both developers and AI assistants. Supports light/dark mode and air-gapped deployment.
+
+For full context, read [PRIZM.md](/PRIZM.md). For installation and theming, see the docs section.
+
+## Where to fetch source
+
+- **Repo**: https://github.com/prizm-design/prizm
+- **Docs site**: https://prizm.design
+- **Raw fetch URL pattern**: `https://raw.githubusercontent.com/prizm-design/prizm/main/<repo-relative-path>` — e.g. `https://raw.githubusercontent.com/prizm-design/prizm/main/components/ui/button.tsx`, `https://raw.githubusercontent.com/prizm-design/prizm/main/app/c3/templates/app-shell/shell.tsx`.
+
+If a fetch 404s, the file genuinely doesn't ship — don't synthesise a substitute. Stop and report the missing path back to the developer.
+
+If you're working in a consumer project, look for a project rules file (`CLAUDE.md` or your tool's equivalent) that records its PRIZM zone, pack, and conventions — read and honour it before building, and offer to set one up if it's missing so the decisions persist across sessions rather than relying on a one-off prompt the context will eventually summarise away.
+
+## Foundations — visual reference + design rationale
+
+- [Foundations overview](/docs/foundations): index of every foundation reference page.
+- [Design principles](/docs/principles): the human factors and HCI research behind PRIZM's patterns. Core + C3 + Enterprise principle sets. Templates and components anchor on these.
+- [Colours](/docs/colors): semantic tokens across all four theme variants, plus baseline scales.
+- [Typography](/docs/typography): font families, type scale, weights.
+- [Surface & motion](/docs/surface-and-motion): radii, shadows, and a note on motion (components use Tailwind's default duration / easing utilities; PRIZM doesn't define its own).
+- [Icons](/docs/icons): lucide-react at PRIZM's site-wide 1.5 stroke-width. Sizes, text-pairing, accessibility, catalogue of ~30 commonly-used icons.
+- [Liquid glass](/docs/liquid-glass): C3-only translucent surface treatment. Two tiers (chrome / panel). Available in both C3 light and C3 dark modes. Featured in PRIZM 4.0.
+
+## Overview — orientation and how-to
+
+- [Introduction](/docs/introduction): why PRIZM is named after a prism, what changed in 4.0 (Base UI foundation, Tailwind v4 tokens, AI-first documentation, custom Liquid Glass), and what's next.
+- [Getting started](/docs/getting-started)
+- [Using with AI](/docs/using-with-ai): how a team adopts PRIZM with AI in the loop — what PRIZM gives AI, how to wire up Claude Code / Cursor / chat-based LLMs / internal gateways / air-gapped models, a starter prompt, a one-time prompt to set up a project rules file that keeps AI on-system across sessions, and where each role fits.
+- [Installation](/docs/installation)
+- [Theming](/docs/theming): architecture of the four-variant token system.
+- [Air-gap setup](/docs/air-gap)
+- [Changelog](/docs/changelog): dated timeline of new components, templates, foundations, design tweaks, and notable fixes. Curated, not auto-generated.
+
+## Components — Actions
+
+- [Button](/components/button): Trigger an action. Six variants, four sizes.
+
+## Components — Forms
+
+- [Input](/components/input): Single-line text input.
+- [Textarea](/components/textarea): Multi-line text input.
+- [Checkbox](/components/checkbox): Binary toggle. Built on Base UI Checkbox.
+- [Radio Group](/components/radio-group): Mutually exclusive options. Built on Base UI Radio.
+- [Switch](/components/switch): Toggle on/off. Built on Base UI Switch.
+- [Select](/components/select): Choose one option. Built on Base UI Select.
+- [Combobox](/components/combobox): Searchable select with typeahead. Built on Base UI Combobox.
+- [Slider](/components/slider): Numeric range. Built on Base UI Slider.
+- [Label](/components/label): Accessible label for form controls.
+- [Field](/components/field): Form field wrapper with label, hint, and error. Built on Base UI Field.
+
+## Components — Data display
+
+- [Badge](/components/badge): Status indicator or label. Seven variants.
+- [Avatar](/components/avatar): User image with fallback. Built on Base UI Avatar.
+- [Table](/components/table): Structured tabular data.
+- [Calendar](/components/calendar): Date picker grid.
+- [Kbd](/components/kbd): Keyboard shortcut display.
+- [Code](/components/code): Inline and block code.
+
+## Components — Layout
+
+- [Card](/components/card): Container with surface, border, and structured slots.
+- [Separator](/components/separator): Visual divider. Built on Base UI Separator.
+- [Frame](/components/frame): Constrained content frame with padding variants.
+- [Group](/components/group): Horizontal control grouping.
+- [Stack](/components/stack): Vertical spacing primitive.
+
+## Components — Feedback
+
+- [Alert](/components/alert): Inline message block.
+- [Toast](/components/toast): Transient notification. Built on Base UI Toast.
+- [Progress](/components/progress): Determinate loading. Built on Base UI Progress.
+- [Spinner](/components/spinner): Indeterminate loading indicator.
+- [Skeleton](/components/skeleton): Loading placeholder.
+- [Empty State](/components/empty-state): Placeholder for empty content regions.
+
+## Components — Navigation
+
+- [Tabs](/components/tabs): Switch between views. Built on Base UI Tabs.
+- [Breadcrumb](/components/breadcrumb): Hierarchical navigation trail.
+- [Pagination](/components/pagination): Page navigation for long lists.
+- [Navigation Menu](/components/navigation-menu): Multi-level navigation bar. Built on Base UI Navigation Menu.
+- [Command](/components/command): Command palette with fuzzy search and keyboard navigation.
+- [Link](/components/link): Inline hyperlink with PRIZM styling.
+
+## Components — Overlay
+
+- [Dialog](/components/dialog): Modal dialog for focused tasks. Built on Base UI Dialog.
+- [Sheet](/components/sheet): Edge-anchored sliding panel. Opens from any side. Built on Base UI Dialog.
+- [Popover](/components/popover): Floating contextual panel. Built on Base UI Popover.
+- [Tooltip](/components/tooltip): Hover label for compact UI elements. Built on Base UI Tooltip.
+- [Menu](/components/menu): Action menu with keyboard support. Built on Base UI Menu.
+- [Context Menu](/components/context-menu): Right-click action menu. Built on Base UI Context Menu.
+- [Hover Card](/components/hover-card): Rich preview on hover. Built on Base UI Preview Card.
+
+## Components — Typography
+
+- [Heading](/components/heading): Display and section headings with size variants.
+- [Text](/components/text): Body text primitive with size, variant, and weight props.
+- [Prose](/components/prose): Long-form content block with styled headings, lists, code, and tables.
+
+## Components — Planned
+
+Reserved slugs with no source file yet. Surface them as roadmap; never copy or fabricate.
+
+- [Toggle Group](/components/toggle-group): Group of toggle buttons for view switching or multi-select. Will be built on Base UI Toggle Group.
+- [Number Input](/components/number-input): Numeric input with increment / decrement controls. Will be built on Base UI Number Field.
+- [Date Picker](/components/date-picker): Date or date-range picker. Composes Calendar with input + popover.
+- [Tree](/components/tree): Hierarchical data view with expand / collapse.
+- [Accordion](/components/accordion): Vertically stacked, collapsible content sections. Will be built on Base UI Accordion.
+- [Scroll Area](/components/scroll-area): Custom-styled scrollable region. Will be built on Base UI Scroll Area.
+
+## Product zones
+
+- [C3 overview](/c3/overview): When to use C3 and its design principles.
+- [Enterprise overview](/enterprise/overview): When to use Enterprise and its design principles.
+
+## Templates
+
+- [C3 templates](/c3/templates): index of available C3 layout scaffolds.
+  - [C3 App Shell](/c3/templates/app-shell): **start here for any C3 application** — foundational chrome (top bar, status ticker, icon rail, main canvas slot, expandable side panel). Copy `shell.tsx`, fill the main canvas + rail-panel slots with the feature's content; don't reinvent the chrome. Other C3 templates compose this. [Full-bleed preview](/c3/templates/app-shell/preview).
+
+## RC3 — Robotics & Autonomy
+
+A capability module pack inside C3 for robotics & autonomy applications. Inherits C3 foundations and components; adds an identity layer, three signature organisms, and RC3-specific concepts. Activates via `data-pack="rc3"` on a parent surface.
+
+- [Robotics & Autonomy overview](/c3/rc3): what RC3 is, when to use it, the identity rule, and a small live autonomy panel.
+- [RC3 identity](/c3/rc3/identity): Ember signature colour, schematic iconography, the always-on identity rule.
+- [Ember colour reference](/c3/rc3/identity/colour): ramp, tokens, activation contract, contrast.
+
+### RC3 concepts
+
+- [Command contexts](/c3/rc3/concepts/command-contexts): platform / group / swarm / mission scope spectrum.
+- [Behavioural invariants](/c3/rc3/concepts/behavioural-invariants): five properties every RC3 surface must satisfy regardless of layout.
+- [Surface regions](/c3/rc3/concepts/surface-regions): the shared dictionary of regions (spatial canvas, roster, telemetry, autonomy state, comms/health, safety actions, mission timeline, detail panel), each linked to the organism that fills it.
+
+### RC3 components
+
+- [Safety actions](/c3/rc3/components/safety-actions): one-tap-reach, two-tap-confirm primary safety affordance. Per-scope action set (e-stop / recall / abort + recoverable secondary). Honours invariants 1 and 4.
+- [Comms / health strip](/c3/rc3/components/comms-health-strip): persistent strip carrying link state + signal + battery + GPS for the active platform(s). Single-platform and aggregated views. Honours invariant 2.
+- [Autonomy mode selector](/c3/rc3/components/autonomy-mode-selector): LOA ladder with asymmetric consent — the climb arms, the descent is immediate. Compact-by-default with disclosure. Honours invariant 4.
+- [Video tile](/c3/rc3/components/video-tile): frame for a single sensor feed — FPV / gimbal / IR / EO. Consumer plugs the stream player into the children slot. Honours invariant 5.
+- [Telemetry HUD](/c3/rc3/components/telemetry-hud): compact strip of operational telemetry — speed, altitude, heading, battery, attitude. Overlays a video tile or sits as its own thin panel. Honours invariant 5.
+- [Controller interface](/c3/rc3/components/controller-interface): live operator input state — sticks, triggers, buttons. Read-only; consumer wires input from gamepad / WebSocket / physical controller pipeline. Honours invariant 5.
+- [Platform roster](/c3/rc3/components/platform-roster): vertical list of platforms with link, autonomy mode, and battery summary per row. The active platform is Ember-marked — unmistakable. Honours invariant 3.
+- [Platform detail](/c3/rc3/components/platform-detail): vertical card showing deep state of a single platform — master-detail companion to platform roster. Comms, telemetry, mission, operator, last-contact. Honours invariant 3.
+- [Perception view](/c3/rc3/components/perception-view): live 3D window into what the swarm perceives — point clouds, occupancy, structure, and areas of interest, with per-source freshness. RC3 ships a dependency-free reference renderer and the operator chrome; upstream does the fusion (no SLAM in RC3). ROS 2 / Foxglove-shaped contract; render-delegate escape hatch for vendor engines. Honours invariant 5.
+
+### RC3 components — Planned
+
+Reserved slugs with no source file yet. Surface them as roadmap; never copy or fabricate.
+- [Waypoint list](/c3/rc3/components/waypoint-list): ordered waypoint editor with reorder, insert, and active-step affordances.
+- [Alerts panel](/c3/rc3/components/alerts-panel): RC3-scoped warnings for autonomy, safety, link, and platform events.
+- [Mission timeline](/c3/rc3/components/mission-timeline): sequence of mission phases with progress and active-step indicator.
+- [Hand-off / takeover](/c3/rc3/components/handoff): shared-control affordance for multi-operator workflows. Active controller, takeover request, transfer acknowledgement.
+- [Gimbal aim](/c3/rc3/components/gimbal-aim): spatial indicator of camera orientation relative to the platform — bearing, depression / elevation, field-of-view.
+
+### RC3 templates
+
+- [RC3 templates index](/c3/rc3/templates): anchor arrangements that compose the RC3 organisms into a working surface.
+- [Operator console](/c3/rc3/templates/operator-console): the anchor RC3 template — single-platform command context composing autonomy mode selector, comms / health strip, safety actions, and telemetry HUD over a stylised tactical canvas. **Use this as the starting scaffold for any single-platform RC3 surface**; sets `data-pack="rc3"` and follows the behavioural invariants.
+- [Fleet overview](/c3/rc3/templates/fleet-overview): second anchor template — swarm-scope command surface composing platform roster, aggregated comms / health strip, group autonomy mode selector, group safety actions, and an active-platform pane (video tile + telemetry HUD). **Use this as the starting scaffold for any group / swarm RC3 surface**.
+
+## Optional
+
+- [Per-component LLM context files](/llms/) — deeper detail on each component for LLMs.
+- [Per-organism LLM context files for RC3](/llms/rc3/) — `safety-actions.md`, `comms-health-strip.md`, `autonomy-mode-selector.md`.

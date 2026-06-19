@@ -11,26 +11,29 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  // Self-hosted fonts only — see app/app.css @font-face. No external CDN.
   {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
+    rel: "preload",
+    href: "/fonts/Inter/Inter-VariableFont_opsz,wght.woff2",
+    as: "font",
+    type: "font/woff2",
     crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
 ];
 
+// Restores the persisted PRIZM theme before paint so a reload doesn't flash the
+// default enterprise-light theme. Kept inline (repo-local) to honour air-gap discipline.
+const restoreTheme = `(function(){try{var z=localStorage.getItem("prizm-zone"),m=localStorage.getItem("prizm-mode"),e=document.documentElement;if(z==="enterprise"||z==="c3")e.dataset.zone=z;if(m==="light"||m==="dark")e.dataset.mode=m;}catch(_){}})();`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-zone="enterprise" data-mode="light" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script dangerouslySetInnerHTML={{ __html: restoreTheme }} />
       </head>
       <body>
         {children}
