@@ -1,4 +1,4 @@
-import { ArrowRight, Database, Layers } from "lucide-react";
+import { ArrowRight, CalendarRange, Database, Layers } from "lucide-react";
 import { Link } from "react-router";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -41,6 +41,13 @@ const EXPERIMENTS = [
     title: "Data access layer",
     description:
       "A live demo of the role-aware, backend-agnostic data layer: switch acting identity to see deny-by-default authorisation and row-level ownership over a swappable storage backend.",
+  },
+  {
+    to: "/playground/date-range-picker",
+    icon: CalendarRange,
+    title: "Date range picker",
+    description:
+      "A start/end date-range picker composed from PRIZM Calendar, Popover, and Button, shown standalone and then editing ranges inside a table cell.",
   },
 ];
 

@@ -6,4 +6,8 @@ export default [
   route("playground", "routes/playground.tsx"),
   route("playground/multi-step-form", "routes/playground.multi-step-form.tsx"),
   route("playground/data-access", "routes/playground.data-access.tsx"),
+  route(
+    "playground/date-range-picker",
+    "routes/playground.date-range-picker.tsx",
+  ),
 ] satisfies RouteConfig;
