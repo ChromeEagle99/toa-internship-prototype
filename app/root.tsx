@@ -8,6 +8,10 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+// react-grid-layout's structural CSS (item transitions, placeholder, resize
+// handle positioning). Imported before app.css so our token-based overrides
+// there win. Local package asset — no external URL, air-gap clean.
+import "react-grid-layout/css/styles.css";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [

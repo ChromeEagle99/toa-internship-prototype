@@ -1,4 +1,10 @@
-import { ArrowRight, CalendarRange, Database, Layers } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarRange,
+  Database,
+  LayoutDashboard,
+  Layers,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -48,6 +54,13 @@ const EXPERIMENTS = [
     title: "Date range picker",
     description:
       "A start/end date-range picker composed from PRIZM Calendar, Popover, and Button, shown standalone and then editing ranges inside a table cell.",
+  },
+  {
+    to: "/playground/dashboard",
+    icon: LayoutDashboard,
+    title: "Customisable dashboard",
+    description:
+      "A draggable, resizable widget dashboard on react-grid-layout: toggle edit mode to rearrange, resize, add, or remove widgets, with per-widget minimum sizes, a pinned banner, and layout saved per device.",
   },
 ];
 

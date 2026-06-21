@@ -10,4 +10,5 @@ export default [
     "playground/date-range-picker",
     "routes/playground.date-range-picker.tsx",
   ),
+  route("playground/dashboard", "routes/playground.dashboard.tsx"),
 ] satisfies RouteConfig;

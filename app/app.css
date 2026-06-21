@@ -101,3 +101,35 @@
     outline-offset: 2px;
   }
 }
+
+/* ============================================================
+   react-grid-layout — re-theme the drag placeholder and resize
+   handle with PRIZM tokens so they track the active theme.
+   Base structural rules come from the package CSS imported in
+   app/root.tsx; these overrides load afterwards and win.
+   ============================================================ */
+.react-grid-item.react-grid-placeholder {
+  background: var(--prizm-color-accent);
+  opacity: 0.15;
+  border-radius: var(--prizm-radius-lg, 0.5rem);
+}
+
+/* The resize handle only renders while a widget is resizable (edit mode),
+   so it's safe to keep it permanently visible rather than hover-only. */
+.react-grid-item > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  width: 8px;
+  height: 8px;
+  right: 4px;
+  bottom: 4px;
+  border-right: 2px solid var(--prizm-color-fg-subtle);
+  border-bottom: 2px solid var(--prizm-color-fg-subtle);
+}
+
+.react-grid-item:hover > .react-resizable-handle::after {
+  border-right-color: var(--prizm-color-accent);
+  border-bottom-color: var(--prizm-color-accent);
+}
