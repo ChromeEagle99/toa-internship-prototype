@@ -5,4 +5,5 @@ export default [
   route("components", "routes/components.tsx"),
   route("playground", "routes/playground.tsx"),
   route("playground/multi-step-form", "routes/playground.multi-step-form.tsx"),
+  route("playground/data-access", "routes/playground.data-access.tsx"),
 ] satisfies RouteConfig;

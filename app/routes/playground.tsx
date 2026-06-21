@@ -1,4 +1,4 @@
-import { ArrowRight, Layers } from "lucide-react";
+import { ArrowRight, Database, Layers } from "lucide-react";
 import { Link } from "react-router";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -34,6 +34,13 @@ const EXPERIMENTS = [
     title: "Multi-step form",
     description:
       "A route-free wizard built as a compound component, with several worked examples covering schemas, conditional steps, and the imperative validate escape hatch.",
+  },
+  {
+    to: "/playground/data-access",
+    icon: Database,
+    title: "Data access layer",
+    description:
+      "A live demo of the role-aware, backend-agnostic data layer: switch acting identity to see deny-by-default authorisation and row-level ownership over a swappable storage backend.",
   },
 ];
 
