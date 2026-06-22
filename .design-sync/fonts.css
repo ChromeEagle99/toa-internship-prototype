@@ -1,0 +1,28 @@
+/* design-sync font wiring.
+   The compiled cssEntry declares @font-face with absolute /fonts/... URLs that
+   the converter can't resolve (they point at the app's web root, not disk), so
+   they get dropped. These rules re-declare the same families with URLs relative
+   to this file so extractFonts copies the woff2 into the bundle's fonts/ dir and
+   rewrites the URLs. The woff2 are the self-hosted, air-gap-clean files under
+   public/fonts/. Referenced via cfg.extraFonts. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../public/fonts/Inter/Inter-VariableFont_opsz,wght.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../public/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("../public/fonts/JetBrainsMono/JetBrainsMono-VariableFont_wght.woff2") format("woff2");
+}

@@ -1,0 +1,26 @@
+{
+  "projectId": "544d1fe4-81b7-4a32-86a1-60044a3b9308",
+  "shape": "package",
+  "pkg": "toa-project",
+  "globalName": "Prizm",
+  "srcDir": "components",
+  "tsconfig": "./.design-sync/tsconfig.sync.json",
+  "cssEntry": ".design-sync/compiled.css",
+  "extraFonts": ".design-sync/fonts.css",
+  "docsDir": ".design-sync/docs",
+  "readmeHeader": ".design-sync/conventions.md",
+  "buildCmd": "npm run build && cp build/client/assets/root-*.css .design-sync/compiled.css && node .design-sync/gen-docs.mjs",
+  "componentSrcMap": {
+    "RC3Swatch": null,
+    "AutonomyModeSelectorDemo": null,
+    "PerceptionViewDemo": null
+  },
+  "overrides": {
+    "Dialog": { "cardMode": "single", "viewport": "640x480" },
+    "Sheet": { "cardMode": "single", "viewport": "640x520" },
+    "ContextMenu": { "cardMode": "single", "viewport": "360x320" },
+    "Tooltip": { "cardMode": "single", "primaryStory": "HelpTooltip" },
+    "VideoTile": { "cardMode": "column" },
+    "Prose": { "cardMode": "column" }
+  }
+}
