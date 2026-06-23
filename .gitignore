@@ -6,6 +6,9 @@
 /.react-router/
 /build/
 
+# Local dev database (file-backed StorageAdapter)
+/.data/
+
 # design-sync (claude.ai/design) — staged scripts, build output, machine state
 /.ds-sync/
 /ds-bundle/

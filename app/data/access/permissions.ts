@@ -70,14 +70,24 @@ export const POLICY: Policy = {
   [ROLES.internshipOfficer]: [
     // IOs handle applications: full read/list/update across the resource.
     { resource: "applications", actions: ["read", "list", "update"] },
+    // IOs author and run programmes, and manage the live projects under them.
+    { resource: "programmes", actions: ["create", "read", "list", "update"] },
+    { resource: "projects", actions: ["read", "list", "update"] },
   ],
   [ROLES.ioAdmin]: [
     // IO Admin: everything IOs can do, plus create and delete.
     { resource: "applications", actions: "*" },
+    { resource: "programmes", actions: "*" },
+    { resource: "projects", actions: "*" },
+    // Manages who has access. (The auth bootstrap reads users as a system
+    // identity; this grant is for an actual user-management screen.)
+    { resource: "users", actions: "*" },
   ],
   [ROLES.pdPnc]: [
     // People & Culture: read and list, no edits.
     { resource: "applications", actions: ["read", "list"] },
+    { resource: "programmes", actions: ["read", "list"] },
+    { resource: "projects", actions: ["read", "list"] },
   ],
   [ROLES.director]: [
     // Director: read-wide oversight across every resource.

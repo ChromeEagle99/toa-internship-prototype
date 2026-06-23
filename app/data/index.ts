@@ -35,6 +35,8 @@ export { getAdapter, setAdapter } from "./config";
 export { type StorageAdapter } from "./adapters/adapter";
 export { createMemoryAdapter } from "./adapters/memory";
 export { createLocalStorageAdapter } from "./adapters/local-storage";
+// Note: the file backend lives in `adapters/file.server.ts` and is server-only;
+// import `getFileAdapter` / `usePersistentBackend` directly from there.
 
 // Repositories (example — replace with real ones)
 export {
@@ -44,3 +46,38 @@ export {
   draftApplication,
   type Application,
 } from "./repositories/applications";
+
+export {
+  programmesRepository,
+  ProgrammeSchema,
+  PROG_CATEGORIES,
+  PROG_STATUSES,
+  exampleProgramme,
+  type Programme,
+  type ProgCategory,
+  type ProgStatus,
+  type CriteriaGroup,
+  type CriteriaPathway,
+  type CriteriaRule,
+  type IntakeWindow,
+} from "./repositories/programmes";
+
+export {
+  projectsRepository,
+  ProjectEntrySchema,
+  PROJECT_STATUSES,
+  exampleProject,
+  type ProjectEntry,
+  type ProjectStatus,
+  type BlackoutPeriod,
+} from "./repositories/projects";
+
+export {
+  usersRepository,
+  UserSchema,
+  exampleUsers,
+  ensureUsersSeeded,
+  resolveUser,
+  listUsers,
+  type User,
+} from "./repositories/users";

@@ -15,4 +15,7 @@ export default [
     "playground/searchable-dropdown",
     "routes/playground.searchable-dropdown.tsx",
   ),
+  route("dev/db", "routes/dev.db.tsx"),
+  route("act-as", "routes/act-as.tsx"),
+  route("programmes", "routes/programmes.tsx"),
 ] satisfies RouteConfig;
