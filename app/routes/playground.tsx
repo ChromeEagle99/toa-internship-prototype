@@ -4,6 +4,7 @@ import {
   Database,
   LayoutDashboard,
   Layers,
+  Search,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -54,6 +55,13 @@ const EXPERIMENTS = [
     title: "Date range picker",
     description:
       "A start/end date-range picker composed from PRIZM Calendar, Popover, and Button, shown standalone and then editing ranges inside a table cell.",
+  },
+  {
+    to: "/playground/searchable-dropdown",
+    icon: Search,
+    title: "Searchable dropdown",
+    description:
+      "A click-to-open, type-to-filter dropdown built on the PRIZM Combobox compound component, shown as a single-select owner picker and a multi-select label picker.",
   },
   {
     to: "/playground/dashboard",
