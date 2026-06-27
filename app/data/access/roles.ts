@@ -17,6 +17,8 @@ export const ROLES = {
   internshipOfficer: "internship_officer",
   /** IO Admin — elevated IO with administrative reach. */
   ioAdmin: "io_admin",
+  /** AD (P&C) — Programme Centre contact who submits projects against a request. */
+  adPnc: "ad_pnc",
   /** PD P&C — People & Culture partner. */
   pdPnc: "pd_pnc",
   /** Director — oversight, typically read-wide. */
@@ -34,6 +36,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   [ROLES.applicant]: "Applicant",
   [ROLES.internshipOfficer]: "Internship Officer",
   [ROLES.ioAdmin]: "IO Admin",
+  [ROLES.adPnc]: "AD (P&C)",
   [ROLES.pdPnc]: "PD P&C",
   [ROLES.director]: "Director",
 };

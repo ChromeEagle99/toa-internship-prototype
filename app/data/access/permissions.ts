@@ -50,6 +50,15 @@ export function owns(actor: Actor, record: unknown): boolean {
 }
 
 /**
+ * Authorship predicate: the record's `createdBy` equals the actor's id. Used to
+ * scope an AD (P&C) to the projects they themselves submitted (row-level read).
+ */
+export function createdByOwns(actor: Actor, record: unknown): boolean {
+  if (!record || typeof record !== "object") return false;
+  return (record as Record<string, unknown>).createdBy === actor.id;
+}
+
+/**
  * The active policy.
  *
  * ⚠️ EXAMPLE RULES — these encode a *plausible* reading of the roles, not a
@@ -74,6 +83,18 @@ export const POLICY: Policy = {
   [ROLES.ioAdmin]: [
     // IO Admin: everything IOs can do, plus create and delete.
     { resource: "applications", actions: "*" },
+    // Owns the programme/intake/project lifecycle and raises project requests.
+    { resource: "programmes", actions: "*" },
+    { resource: "intakes", actions: "*" },
+    { resource: "projects", actions: "*" },
+    { resource: "project-requests", actions: "*" },
+  ],
+  [ROLES.adPnc]: [
+    // AD (P&C): submits projects against a request and reviews their own
+    // submissions; may read the requests they are responding to. The row-level
+    // `createdByOwns` scopes read/list to their own projects.
+    { resource: "projects", actions: ["create", "list", "read"], where: createdByOwns },
+    { resource: "project-requests", actions: ["list", "read"] },
   ],
   [ROLES.pdPnc]: [
     // People & Culture: read and list, no edits.
