@@ -1,22 +1,41 @@
 import { BookOpen, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Text } from "@/components/ui/text";
+import { DataTable, type DataTableColumn } from "~/components/data-table";
 import { useActor } from "~/context/actor-context";
 import { programmesRepository, type Programme } from "~/data";
+
+const columns: DataTableColumn<Programme>[] = [
+  {
+    key: "title",
+    header: "Programme",
+    primary: true,
+    cell: (p) => p.title,
+    sortValue: (p) => p.title,
+    search: (p) => p.title,
+  },
+  {
+    key: "educationLevel",
+    header: "Education level",
+    cell: (p) => <Badge variant="subtle">{p.educationLevel}</Badge>,
+    sortValue: (p) => p.educationLevel,
+    facetValue: (p) => p.educationLevel,
+    search: (p) => p.educationLevel,
+  },
+  {
+    key: "year",
+    header: "Year",
+    cell: (p) => p.year,
+    sortValue: (p) => p.year,
+    facetValue: (p) => String(p.year),
+  },
+];
 
 /**
  * Programmes list (IO Admin). Reads through the data layer with the current
@@ -25,6 +44,7 @@ import { programmesRepository, type Programme } from "~/data";
  */
 export default function ProgrammesIndex() {
   const { actor, ready } = useActor();
+  const navigate = useNavigate();
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +52,7 @@ export default function ProgrammesIndex() {
     const res = await programmesRepository.as(actor).list();
     if (res.ok) {
       setError(null);
-      setProgrammes([...res.data].sort((a, b) => b.year - a.year || a.title.localeCompare(b.title)));
+      setProgrammes(res.data);
     } else {
       setProgrammes([]);
       setError(`[${res.error.code}] ${res.error.message}`);
@@ -46,8 +66,7 @@ export default function ProgrammesIndex() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Text variant="muted">Internship cohorts you manage, grouped by education level and year.</Text>
+      <div className="flex items-center justify-end">
         <Link to="/programmes/new" className={cn(buttonVariants())}>
           <Plus className="h-4 w-4" />
           New programme
@@ -62,7 +81,6 @@ export default function ProgrammesIndex() {
         <EmptyState
           icon={<BookOpen className="h-6 w-6" />}
           title="No programmes yet"
-          description="Create a programme to set the frame for an internship cohort."
           action={
             <Link to="/programmes/new" className={cn(buttonVariants())}>
               <Plus className="h-4 w-4" />
@@ -71,30 +89,16 @@ export default function ProgrammesIndex() {
           }
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Programme</TableHead>
-              <TableHead>Education level</TableHead>
-              <TableHead>Year</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {programmes.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">
-                  <Link to={`/programmes/${p.id}`} className="hover:underline">
-                    {p.title}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="subtle">{p.educationLevel}</Badge>
-                </TableCell>
-                <TableCell>{p.year}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable
+          columns={columns}
+          rows={programmes}
+          getRowId={(p) => p.id}
+          onRowClick={(p) => navigate(`/programmes/${p.id}`)}
+          searchPlaceholder="Search programmes…"
+          initialSort={{ key: "year", dir: -1 }}
+          rowNoun="programme"
+          emptyMessage="No programmes match your filters."
+        />
       )}
     </div>
   );

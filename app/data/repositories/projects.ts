@@ -18,6 +18,57 @@ import type { Intake } from "./intakes";
 export const PROJECT_REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
 export type ProjectReviewStatus = (typeof PROJECT_REVIEW_STATUSES)[number];
 
+/**
+ * ⚠️ PROVISIONAL matching vocabularies. The v6 spec mandates "predefined lists
+ * for consistent matching" for discipline_of_study / skills / tech_domain /
+ * emerging_areas but does NOT enumerate them. These are placeholder values —
+ * replace with the canonical lists once the developer supplies them.
+ */
+export const DISCIPLINES = [
+  "Computer Science",
+  "Computer Engineering",
+  "Electrical Engineering",
+  "Mechanical Engineering",
+  "Data Science",
+  "Mathematics",
+  "Business",
+] as const;
+export type Discipline = (typeof DISCIPLINES)[number];
+
+export const SKILLS = [
+  "Python",
+  "C++",
+  "Java",
+  "JavaScript",
+  "Machine Learning",
+  "Data Engineering",
+  "Cloud",
+  "Cybersecurity",
+  "Robotics",
+  "UI/UX",
+] as const;
+export type Skill = (typeof SKILLS)[number];
+
+export const TECH_DOMAINS = [
+  "Software",
+  "Data & AI",
+  "Cybersecurity",
+  "Robotics",
+  "Cloud & Infrastructure",
+  "Networks",
+  "Hardware",
+] as const;
+export type TechDomain = (typeof TECH_DOMAINS)[number];
+
+export const EMERGING_AREAS = [
+  "Artificial Intelligence",
+  "Quantum",
+  "Autonomy",
+  "Cyber",
+  "Space",
+] as const;
+export type EmergingArea = (typeof EMERGING_AREAS)[number];
+
 export const ProjectSchema = z.object({
   id: z.string().min(1),
   /** Nullable FK → Intake.id. Null = approved-but-unattached (the pool). */
@@ -36,11 +87,23 @@ export const ProjectSchema = z.object({
   durationMonths: z.number().int().positive(),
   mentorName: z.string().min(1),
   mentorEmail: z.string().default(""),
-  /** Matching tags (disciplines / skills / domains) for later applicant matching. */
-  matchingTags: z.array(z.string()).default([]),
+  mentorDesignation: z.string().default(""),
+  /** Optional free-text mentor blurb (v6 mentor_writeup). */
+  mentorWriteup: z.string().default(""),
+  /**
+   * Structured matching tags (v6) — replace the old free-form `matchingTags`.
+   * All defaulted so pre-existing stored rows still parse; the single-selects are
+   * nullable until set (the spec marks them Required at the form layer).
+   */
+  disciplineOfStudy: z.array(z.enum(DISCIPLINES)).default([]),
+  skills: z.array(z.enum(SKILLS)).default([]),
+  techDomain: z.enum(TECH_DOMAINS).nullable().default(null),
+  emergingAreas: z.enum(EMERGING_AREAS).nullable().default(null),
   /** Set by the IO Admin during review. AD (P&C) submissions start "pending". */
   reviewStatus: z.enum(PROJECT_REVIEW_STATUSES).default("pending"),
-  /** Actor id of the AD (P&C) who submitted it. */
+  /** Actor id of the IO Admin who reviewed it (v6 reviewed_by). Null until reviewed. */
+  reviewedBy: z.string().nullable().default(null),
+  /** Actor id of the AD (P&C) who submitted it (v6 submitted_by). */
   createdBy: z.string().min(1),
   createdAt: z.string(),
 });
@@ -81,7 +144,12 @@ export function makeProject(input: {
   durationMonths: number;
   mentorName: string;
   mentorEmail?: string;
-  matchingTags?: string[];
+  mentorDesignation?: string;
+  mentorWriteup?: string;
+  disciplineOfStudy?: Discipline[];
+  skills?: Skill[];
+  techDomain?: TechDomain | null;
+  emergingAreas?: EmergingArea | null;
   createdBy: string;
   createdAt: string;
 }): Project {
@@ -98,8 +166,14 @@ export function makeProject(input: {
     durationMonths: input.durationMonths,
     mentorName: input.mentorName,
     mentorEmail: input.mentorEmail ?? "",
-    matchingTags: input.matchingTags ?? [],
+    mentorDesignation: input.mentorDesignation ?? "",
+    mentorWriteup: input.mentorWriteup ?? "",
+    disciplineOfStudy: input.disciplineOfStudy ?? [],
+    skills: input.skills ?? [],
+    techDomain: input.techDomain ?? null,
+    emergingAreas: input.emergingAreas ?? null,
     reviewStatus: "pending",
+    reviewedBy: null,
     createdBy: input.createdBy,
     createdAt: input.createdAt,
   };

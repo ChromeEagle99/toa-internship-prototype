@@ -18,11 +18,15 @@ import { createRepository, newId } from "../repository";
 /**
  * Education levels an internship can target. Shared across Programme, Project,
  * and Project Request lines so the soft match on education level is type-safe.
- *
- * ⚠️ Provisional — taken from the v6 prototype's worked examples. Confirm the
- * full set (ITE? Master's?) against the product spec before relying on it.
+ * The canonical five (confirmed against the TOA prototype).
  */
-export const EDUCATION_LEVELS = ["University", "Polytechnic", "Junior College"] as const;
+export const EDUCATION_LEVELS = [
+  "University",
+  "Junior College",
+  "Polytechnic",
+  "Post JC/Polytechnic",
+  "YDSP",
+] as const;
 export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
 
 export const ProgrammeSchema = z.object({

@@ -57,6 +57,8 @@ export {
   IntakeSchema,
   INTAKE_STATUSES,
   makeIntake,
+  intakeDurationMonths,
+  intakeTitleFromPeriod,
   type Intake,
   type IntakeStatus,
 } from "./repositories/intakes";
@@ -64,10 +66,18 @@ export {
   projectsRepository,
   ProjectSchema,
   PROJECT_REVIEW_STATUSES,
+  DISCIPLINES,
+  SKILLS,
+  TECH_DOMAINS,
+  EMERGING_AREAS,
   attachableToIntake,
   makeProject,
   type Project,
   type ProjectReviewStatus,
+  type Discipline,
+  type Skill,
+  type TechDomain,
+  type EmergingArea,
 } from "./repositories/projects";
 export {
   projectRequestsRepository,
