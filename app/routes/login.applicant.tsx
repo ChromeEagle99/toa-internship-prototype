@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
+import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
@@ -70,13 +71,14 @@ export async function action({ request }: Route.ActionArgs) {
  *  Singpass-brand red while staying within PRIZM's semantic tokens. */
 function SingpassButton({ disabled }: { disabled?: boolean }) {
   return (
-    <button
+    <Button
       type="submit"
+      variant="danger"
       disabled={disabled}
-      className="flex h-12 w-full items-center justify-center gap-1.5 rounded-md bg-danger text-sm font-semibold text-danger-fg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50"
+      className="h-12 w-full gap-1.5 text-sm font-semibold"
     >
       Log in with <span className="font-bold">singpass</span>
-    </button>
+    </Button>
   );
 }
 

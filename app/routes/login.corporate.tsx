@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight, KeyRound } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
+import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
@@ -78,13 +79,14 @@ export async function action({ request }: Route.ActionArgs) {
  *  Corppass-brand red while staying within PRIZM's semantic tokens. */
 function CorppassButton({ disabled }: { disabled?: boolean }) {
   return (
-    <button
+    <Button
       type="submit"
+      variant="danger"
       disabled={disabled}
-      className="flex h-12 w-full items-center justify-center gap-1.5 rounded-md bg-danger text-sm font-semibold text-danger-fg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50"
+      className="h-12 w-full gap-1.5 text-sm font-semibold"
     >
       Log in with <span className="font-bold">Corppass</span>
-    </button>
+    </Button>
   );
 }
 
@@ -92,14 +94,15 @@ function CorppassButton({ disabled }: { disabled?: boolean }) {
  *  prototype behaviour (sets the cookie for the selected identity). */
 function SsoButton({ disabled }: { disabled?: boolean }) {
   return (
-    <button
+    <Button
       type="submit"
+      variant="outline"
       disabled={disabled}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-border bg-surface text-sm font-semibold text-fg transition-colors hover:bg-bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50"
+      className="h-12 w-full bg-surface text-sm font-semibold"
     >
       <KeyRound className="size-4" />
       Staff SSO (WOG AD)
-    </button>
+    </Button>
   );
 }
 
