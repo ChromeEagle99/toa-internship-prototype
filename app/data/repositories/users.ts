@@ -63,6 +63,7 @@ export function exampleUsers(): User[] {
   return [
     { id: "u-applicant-internship", name: "Jenny Aw", email: "jenny.aw@example.sg", role: ROLES.applicant },
     { id: "u-applicant-scholarship", name: "Marcus Tan", email: "marcus.tan@example.sg", role: ROLES.applicant },
+    { id: "u-applicant-midterm", name: "Priya Kumar", email: "priya.kumar@example.sg", role: ROLES.applicant },
     { id: "u-io", name: "Jamie Neo", email: "jamie.neo@example.sg", role: ROLES.internshipOfficer },
     { id: "u-ioadmin", name: "Tara Tan", email: "tara.tan@example.sg", role: ROLES.ioAdmin },
     { id: "u-pdpnc", name: "Lena Lim", email: "lena.lim@example.sg", role: ROLES.pdPnc },
