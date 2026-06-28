@@ -1,4 +1,4 @@
-import { ROLES, type Role } from "~/data";
+import { ALL_ROLES, ROLES, type Role } from "~/data";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -41,3 +41,32 @@ export const DEMO_APPLICANT_IDENTITIES: readonly DemoIdentity[] = [
  * form can't elevate into a back-office role through this screen.
  */
 export const APPLICANT_LOGIN_ROLES: readonly Role[] = [ROLES.applicant];
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  THE SWAP POINT — which demo identities the CORPORATE (internal console) login
+ *  offers. The back-office mirror of the applicant picker above.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  "Corporate" is the staff sign-in channel (Corppass / WOG AD) — same screen,
+ *  served at `/login/corporate`. Same rules as the applicant picker: each id
+ *  below MUST exist in `exampleUsers()` with a back-office role (anything other
+ *  than `applicant`). The name/email live with the user record; only the id and
+ *  the display-only `tagline` live here. In the real thing this picker
+ *  disappears and Corppass / WOG AD seeds the cookie instead.
+ */
+export const DEMO_CORPORATE_IDENTITIES: readonly DemoIdentity[] = [
+  { id: "u-ioadmin", tagline: "Senior Internship Officer" },
+  { id: "u-io", tagline: "Internship Officer" },
+  { id: "u-pdpnc", tagline: "Personnel & Culture (P&C)" },
+  { id: "u-director", tagline: "Director, DSTA" },
+];
+
+/**
+ * Roles the corporate login is allowed to sign in as — every back-office role,
+ * i.e. everything except `applicant`. The action checks the chosen id resolves
+ * to one of these before setting the cookie, so the corporate screen can never
+ * sign someone in as an applicant (and vice versa).
+ */
+export const CORPORATE_LOGIN_ROLES: readonly Role[] = ALL_ROLES.filter(
+  (role) => role !== ROLES.applicant,
+);

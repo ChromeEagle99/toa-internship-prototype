@@ -18,6 +18,7 @@ export default [
   ),
   route("dev/db", "routes/dev.db.tsx"),
   route("login/applicant", "routes/login.applicant.tsx"),
+  route("login/corporate", "routes/login.corporate.tsx"),
   route("act-as", "routes/act-as.tsx"),
   route("programmes", "routes/programmes.tsx"),
 ] satisfies RouteConfig;
