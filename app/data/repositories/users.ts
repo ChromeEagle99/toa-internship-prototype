@@ -54,10 +54,15 @@ export async function listUsers(): Promise<User[]> {
   return res.ok ? res.data : [];
 }
 
-/** One demo user per role. Stable ids so the "act as" cookie survives reseeds. */
+/**
+ * The demo userbase. Stable ids so the "act as" / login cookie survives reseeds.
+ * One applicant per track (the applicant login surfaces these — see
+ * `app/auth/demo-identities.ts`), then one back-office user per remaining role.
+ */
 export function exampleUsers(): User[] {
   return [
-    { id: "u-applicant", name: "Alice Tan", email: "alice@example.sg", role: ROLES.applicant },
+    { id: "u-applicant-internship", name: "Jenny Aw", email: "jenny.aw@example.sg", role: ROLES.applicant },
+    { id: "u-applicant-scholarship", name: "Marcus Tan", email: "marcus.tan@example.sg", role: ROLES.applicant },
     { id: "u-io", name: "Jamie Neo", email: "jamie.neo@example.sg", role: ROLES.internshipOfficer },
     { id: "u-ioadmin", name: "Tara Tan", email: "tara.tan@example.sg", role: ROLES.ioAdmin },
     { id: "u-pdpnc", name: "Lena Lim", email: "lena.lim@example.sg", role: ROLES.pdPnc },
