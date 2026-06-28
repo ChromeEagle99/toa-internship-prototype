@@ -1,4 +1,4 @@
-import { CircleUser, Database, LogOut } from "lucide-react";
+import { CircleUser, Database, LogOut, PanelsTopLeft } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +119,13 @@ export default function ActAs({ loaderData }: Route.ComponentProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Link to="/programmes" className={buttonVariants({ variant: "solid", size: "sm" })}>
             Go to Programmes (guarded)
+          </Link>
+          <Link
+            to="/playground/shell"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            <PanelsTopLeft />
+            App Shell
           </Link>
           <Link to="/dev/db" className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Database />
