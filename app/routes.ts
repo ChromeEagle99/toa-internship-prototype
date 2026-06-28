@@ -11,6 +11,7 @@ export default [
     "routes/playground.date-range-picker.tsx",
   ),
   route("playground/dashboard", "routes/playground.dashboard.tsx"),
+  route("playground/shell", "routes/playground.shell.tsx"),
   route(
     "playground/searchable-dropdown",
     "routes/playground.searchable-dropdown.tsx",

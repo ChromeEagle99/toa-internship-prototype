@@ -4,6 +4,7 @@ import {
   Database,
   LayoutDashboard,
   Layers,
+  PanelsTopLeft,
   Search,
 } from "lucide-react";
 import { Link } from "react-router";
@@ -21,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 
 import { ThemeToggle } from "~/components/theme-toggle";
+
 
 export function meta() {
   return [
@@ -62,6 +64,13 @@ const EXPERIMENTS = [
     title: "Searchable dropdown",
     description:
       "A click-to-open, type-to-filter dropdown built on the PRIZM Combobox compound component, shown as a single-select owner picker and a multi-select label picker.",
+  },
+  {
+    to: "/playground/shell",
+    icon: PanelsTopLeft,
+    title: "Application shell",
+    description:
+      "The app chrome: a sticky, role-aware side-nav, a sticky header with search and a user menu, and a main content slot. Nav items are filtered by the same policy the data layer enforces — sign in as different roles to see them change.",
   },
   {
     to: "/playground/dashboard",
