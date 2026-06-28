@@ -117,7 +117,7 @@ export default function ActAs({ loaderData }: Route.ComponentProps) {
         <Separator />
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link to="/programmes" className={buttonVariants({ variant: "solid", size: "sm" })}>
+          <Link to="/playground/programmes" className={buttonVariants({ variant: "solid", size: "sm" })}>
             Go to Programmes (guarded)
           </Link>
           <Link

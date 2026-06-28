@@ -59,7 +59,7 @@ export const NAV: NavSection[] = [
     items: [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
       {
-        to: "/programmes",
+        to: "/playground/programmes",
         label: "Programmes",
         icon: BookOpen,
         requires: { action: "list", resource: "programmes" },

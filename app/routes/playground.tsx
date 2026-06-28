@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  BookOpen,
   CalendarRange,
   Database,
   LayoutDashboard,
@@ -79,13 +80,20 @@ const EXPERIMENTS = [
     description:
       "A draggable, resizable widget dashboard on react-grid-layout: toggle edit mode to rearrange, resize, add, or remove widgets, with per-widget minimum sizes, a pinned banner, and layout saved per device.",
   },
+  {
+    to: "/playground/programmes",
+    icon: BookOpen,
+    title: "Guarded page",
+    description:
+      "A worked example of the authorisation policy enforced at two layers: a page-level guard that 403s roles without access before any data loads, and a data-level repository that returns only the rows the acting identity may read. Switch identity to see both respond.",
+  },
 ];
 
 export default function Playground() {
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <Heading as="h1" size="2xl">
               Playground
@@ -98,7 +106,7 @@ export default function Playground() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-8 px-6 py-10">
+      <main className="mx-auto max-w-5xl space-y-8 px-6 py-10">
         <section className="space-y-3">
           <Heading as="h2" size="lg">
             Experiments
@@ -108,9 +116,9 @@ export default function Playground() {
           </Text>
           <Separator />
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {EXPERIMENTS.map(({ to, icon: Icon, title, description }) => (
-              <Card key={to}>
+              <Card key={to} className="flex h-full flex-col">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Icon className="h-5 w-5 text-accent" />
@@ -118,7 +126,7 @@ export default function Playground() {
                   </div>
                   <CardDescription>{description}</CardDescription>
                 </CardHeader>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to={to} className={buttonVariants({ variant: "solid" })}>
                     Open
                     <ArrowRight />

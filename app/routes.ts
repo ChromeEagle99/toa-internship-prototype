@@ -20,5 +20,5 @@ export default [
   route("login/applicant", "routes/login.applicant.tsx"),
   route("login/corporate", "routes/login.corporate.tsx"),
   route("act-as", "routes/act-as.tsx"),
-  route("programmes", "routes/programmes.tsx"),
+  route("playground/programmes", "routes/playground.programmes.tsx"),
 ] satisfies RouteConfig;

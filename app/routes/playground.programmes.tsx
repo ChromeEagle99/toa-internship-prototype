@@ -18,7 +18,7 @@ import { ROLE_LABELS, can, programmesRepository } from "~/data";
 
 import { requireCan } from "~/auth/current-user.server";
 
-import type { Route } from "./+types/programmes";
+import type { Route } from "./+types/playground.programmes";
 
 /**
  * EXAMPLE GUARDED PAGE. Two layers of the SAME policy in action:
