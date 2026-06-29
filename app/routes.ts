@@ -5,6 +5,7 @@ export default [
   route("dashboard", "routes/dashboard.tsx"),
   route("programmes", "routes/programmes.tsx"),
   route("projects", "routes/projects.tsx"),
+  route("project-requests", "routes/project-requests.tsx"),
   route("components", "routes/components.tsx"),
   route("playground", "routes/playground.tsx"),
   route("playground/multi-step-form", "routes/playground.multi-step-form.tsx"),
