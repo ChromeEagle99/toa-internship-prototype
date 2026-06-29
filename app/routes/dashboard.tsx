@@ -287,7 +287,7 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
               icon={GraduationCap}
               label="Programmes"
               value={counts.programmes}
-              to="/playground/programmes"
+              to="/programmes"
             />
           ) : null}
           {canListProjects ? (
