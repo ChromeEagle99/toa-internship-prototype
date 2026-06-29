@@ -5,6 +5,7 @@ import {
   Database,
   LayoutDashboard,
   Layers,
+  ListChecks,
   PanelsTopLeft,
   Search,
 } from "lucide-react";
@@ -65,6 +66,13 @@ const EXPERIMENTS = [
     title: "Searchable dropdown",
     description:
       "A click-to-open, type-to-filter dropdown built on the PRIZM Combobox compound component, shown as a single-select owner picker and a multi-select label picker.",
+  },
+  {
+    to: "/playground/month-multi-select",
+    icon: ListChecks,
+    title: "Month & multi-select",
+    description:
+      "Two Logistics-form fields composed from PRIZM primitives where no shipped component fits: a chip-based multi-select with a closed 'N selected' trigger, and a month/year picker with a min constraint for start/end ranges.",
   },
   {
     to: "/playground/shell",

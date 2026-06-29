@@ -6,6 +6,7 @@ export default [
   route("programmes", "routes/programmes.tsx"),
   route("programmes/new", "routes/programmes.new.tsx"),
   route("projects", "routes/projects.tsx"),
+  route("projects/new", "routes/projects.new.tsx"),
   route("project-requests", "routes/project-requests.tsx"),
   route("components", "routes/components.tsx"),
   route("playground", "routes/playground.tsx"),
@@ -20,6 +21,10 @@ export default [
   route(
     "playground/searchable-dropdown",
     "routes/playground.searchable-dropdown.tsx",
+  ),
+  route(
+    "playground/month-multi-select",
+    "routes/playground.month-multi-select.tsx",
   ),
   route("dev/db", "routes/dev.db.tsx"),
   route("login/applicant", "routes/login.applicant.tsx"),

@@ -70,9 +70,9 @@ export const POLICY: Policy = {
   [ROLES.internshipOfficer]: [
     // IOs handle applications: full read/list/update across the resource.
     { resource: "applications", actions: ["read", "list", "update"] },
-    // IOs author and run programmes, and manage the live projects under them.
+    // IOs author and run programmes, and create/manage the live projects under them.
     { resource: "programmes", actions: ["create", "read", "list", "update"] },
-    { resource: "projects", actions: ["read", "list", "update"] },
+    { resource: "projects", actions: ["create", "read", "list", "update"] },
   ],
   [ROLES.ioAdmin]: [
     // IO Admin: everything IOs can do, plus create and delete.
