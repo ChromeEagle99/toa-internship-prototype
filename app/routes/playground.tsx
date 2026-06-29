@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarRange,
   Database,
+  GanttChartSquare,
   LayoutDashboard,
   Layers,
   ListChecks,
@@ -73,6 +74,13 @@ const EXPERIMENTS = [
     title: "Month & multi-select",
     description:
       "Two Logistics-form fields composed from PRIZM primitives where no shipped component fits: a chip-based multi-select with a closed 'N selected' trigger, and a month/year picker with a min constraint for start/end ranges.",
+  },
+  {
+    to: "/playground/gantt",
+    icon: GanttChartSquare,
+    title: "Gantt chart",
+    description:
+      "An interactive, flexible timeline built as a <Gantt> compound component: drag bars to move, drag edges to resize, switch day/week/month zoom, with milestones, progress fills, selection, and edits lifted out via onItemChange.",
   },
   {
     to: "/playground/shell",
