@@ -8,6 +8,7 @@ export default [
   route("projects", "routes/projects.tsx"),
   route("projects/new", "routes/projects.new.tsx"),
   route("project-requests", "routes/project-requests.tsx"),
+  route("project-requests/new", "routes/project-requests.new.tsx"),
   route("components", "routes/components.tsx"),
   route("playground", "routes/playground.tsx"),
   route("playground/multi-step-form", "routes/playground.multi-step-form.tsx"),
