@@ -27,6 +27,8 @@ import { cn } from "@/lib/utils";
 
 import { ROLE_LABELS, type Actor } from "~/data";
 
+import { ModeToggle } from "~/components/mode-toggle";
+
 import { NAV, visibleNav, type NavSection } from "./nav-config";
 
 /**
@@ -314,6 +316,8 @@ export function Shell({
           <Button variant="ghost" size="icon" aria-label="Notifications">
             <Bell className="size-5" />
           </Button>
+
+          <ModeToggle />
 
           <UserMenu actor={actor} user={user} />
         </div>
