@@ -1,38 +1,4 @@
 import {
-  ArrowUpRight,
-  BookOpen,
-  ChevronDown,
-  ClipboardList,
-  Folder,
-  GitPullRequestArrow,
-  GraduationCap,
-  Plus,
-  type LucideIcon,
-} from "lucide-react";
-import { Link } from "react-router";
-
-import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Heading } from "@/components/ui/heading";
-import {
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuTrigger,
-} from "@/components/ui/menu";
-import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
-
-import { Shell } from "~/components/shell";
-import { requireActor } from "~/auth/current-user.server";
-import {
   APPLICATION_STATUSES,
   ROLE_LABELS,
   ROLES,
@@ -44,13 +10,24 @@ import {
   type Application,
 } from "~/data";
 
+import { requireActor } from "~/auth/current-user.server";
+import { IoDashboardView } from "~/features/dashboard/views/io-dashboard-view";
+import { PdPncDashboardView } from "~/features/dashboard/views/pdpnc-dashboard-view";
+import { dashboardVariantFor } from "~/features/dashboard/view-for";
+import {
+  SAMPLE_APPROVALS,
+  SAMPLE_REQUESTS,
+} from "~/features/projects/submissions-data";
+
 import type { Route } from "./+types/dashboard";
 
 /**
- * The signed-in landing page. Wraps the role-aware {@link Shell} around a summary
- * of the work an actor can actually see: every figure here is sourced through the
- * same policy the data layer enforces, so the dashboard never surfaces a count
- * for a resource the actor may not read.
+ * The signed-in landing page — one URL, several faces. A thin orchestrator: it
+ * resolves the actor's {@link dashboardVariantFor view variant}, loads only that
+ * variant's data, and hands off to a self-contained view that owns its Shell.
+ *
+ * Every figure is sourced through the same policy the data layer enforces, so a
+ * dashboard never surfaces a count for a resource the actor may not read.
  */
 
 export function meta() {
@@ -59,10 +36,48 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const actor = await requireActor(request);
+  const dbUser = await resolveUser(actor.id);
+  const user = {
+    name: dbUser?.name ?? ROLE_LABELS[actor.role],
+    email: dbUser?.email,
+  };
+  const roleLabel = ROLE_LABELS[actor.role];
 
-  // Pull each resource only when the actor may list it — the repository scopes
-  // rows further (an applicant's `list` returns just their own records).
-  const [applications, programmes, projects] = await Promise.all([
+  // Projects are read by both variants (when the actor may list them).
+  const projects = can(actor, "list", "projects")
+    ? await projectsRepository
+        .as(actor)
+        .list()
+        .then((r) => (r.ok ? r.data : []))
+    : [];
+
+  if (dashboardVariantFor(actor.role) === "submissions") {
+    // PD P&C: submission-review summary. Counts from placeholder rows until a
+    // submissions repository exists (see `features/projects/submissions-data.ts`).
+    const requestsSubmitted = SAMPLE_REQUESTS.filter(
+      (r) => r.status === "submitted",
+    ).length;
+    return {
+      actor,
+      user,
+      roleLabel,
+      data: {
+        variant: "submissions" as const,
+        counts: {
+          pendingReviews: SAMPLE_APPROVALS.filter((a) => a.review === "pending").length,
+          requestsSubmitted,
+          requestsPending: SAMPLE_REQUESTS.length - requestsSubmitted,
+          projects: projects.length,
+        },
+        approvals: SAMPLE_APPROVALS,
+        requests: SAMPLE_REQUESTS,
+      },
+    };
+  }
+
+  // Default: applications-pipeline summary. Pull each resource only when the
+  // actor may list it — the repository scopes rows further.
+  const [applications, programmes] = await Promise.all([
     can(actor, "list", "applications")
       ? applicationsRepository
           .as(actor)
@@ -75,15 +90,7 @@ export async function loader({ request }: Route.LoaderArgs) {
           .list()
           .then((r) => (r.ok ? r.data : []))
       : Promise.resolve([]),
-    can(actor, "list", "projects")
-      ? projectsRepository
-          .as(actor)
-          .list()
-          .then((r) => (r.ok ? r.data : []))
-      : Promise.resolve([]),
   ]);
-
-  const user = await resolveUser(actor.id);
 
   // Tally applications by status for the breakdown card.
   const byStatus = Object.fromEntries(
@@ -99,273 +106,61 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   return {
     actor,
-    user: {
-      name: user?.name ?? ROLE_LABELS[actor.role],
-      email: user?.email,
+    user,
+    roleLabel,
+    data: {
+      variant: "default" as const,
+      canListApplications: can(actor, "list", "applications"),
+      canListProgrammes: can(actor, "list", "programmes"),
+      canListProjects: can(actor, "list", "projects"),
+      // Quick-action gates. Create grants come from the policy; project requests
+      // aren't a data resource, so they're role-gated to match the side-nav.
+      canCreateProjects: can(actor, "create", "projects"),
+      canCreateProgrammes: can(actor, "create", "programmes"),
+      canCreateProjectRequest: (
+        [ROLES.internshipOfficer, ROLES.ioAdmin] as string[]
+      ).includes(actor.role),
+      counts: {
+        applications: applications.length,
+        programmes: programmes.length,
+        projects: projects.length,
+      },
+      byStatus,
+      recentApplications,
     },
-    roleLabel: ROLE_LABELS[actor.role],
-    canListApplications: can(actor, "list", "applications"),
-    canListProgrammes: can(actor, "list", "programmes"),
-    canListProjects: can(actor, "list", "projects"),
-    // Quick-action gates. Create grants come from the policy; project requests
-    // aren't a data resource, so they're role-gated to match the side-nav.
-    canCreateProjects: can(actor, "create", "projects"),
-    canCreateProgrammes: can(actor, "create", "programmes"),
-    canCreateProjectRequest: (
-      [ROLES.internshipOfficer, ROLES.ioAdmin] as string[]
-    ).includes(actor.role),
-    counts: {
-      applications: applications.length,
-      programmes: programmes.length,
-      projects: projects.length,
-    },
-    byStatus,
-    recentApplications,
   };
 }
 
-/** Status → badge variant, so the colour reads the same everywhere. */
-const STATUS_VARIANT: Record<Application["status"], BadgeProps["variant"]> = {
-  draft: "subtle",
-  submitted: "info",
-  under_review: "warning",
-  accepted: "success",
-  rejected: "danger",
-};
-
-const STATUS_LABEL: Record<Application["status"], string> = {
-  draft: "Draft",
-  submitted: "Submitted",
-  under_review: "Under review",
-  accepted: "Accepted",
-  rejected: "Rejected",
-};
-
-/** A headline figure with an icon, optionally linking through to its resource. */
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  to,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  to?: string;
-}) {
-  const body = (
-    <Card
-      className={cn(
-        "h-full transition-colors",
-        to && "hover:border-accent/50",
-      )}
-    >
-      <CardContent className="flex items-start justify-between gap-4 p-5">
-        <div className="space-y-1">
-          <Text size="sm" variant="muted">
-            {label}
-          </Text>
-          <p className="text-3xl font-semibold tracking-tight text-fg">{value}</p>
-        </div>
-        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-accent/10 text-accent">
-          {to ? <ArrowUpRight className="size-5" /> : <Icon className="size-5" />}
-        </span>
-      </CardContent>
-    </Card>
-  );
-
-  return to ? (
-    <Link
-      to={to}
-      className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    >
-      {body}
-    </Link>
-  ) : (
-    body
-  );
-}
-
-interface QuickAction {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-}
-
-/**
- * Header "Quick actions" dropdown. The caller passes only the actions the actor
- * is allowed; the menu renders nothing when that list is empty.
- */
-function QuickActions({ actions }: { actions: QuickAction[] }) {
-  if (actions.length === 0) return null;
-  return (
-    <Menu>
-      <MenuTrigger
-        render={
-          <Button size="sm" className="hidden sm:inline-flex">
-            <Plus className="size-4" />
-            Quick actions
-            <ChevronDown className="size-4" />
-          </Button>
-        }
-      />
-      <MenuContent className="w-56">
-        {actions.map((action) => (
-          <MenuItem key={action.to} render={<Link to={action.to} />}>
-            <action.icon className="size-4" />
-            {action.label}
-          </MenuItem>
-        ))}
-      </MenuContent>
-    </Menu>
-  );
-}
-
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const {
-    actor,
-    user,
-    roleLabel,
-    canListApplications,
-    canListProgrammes,
-    canListProjects,
-    canCreateProjects,
-    canCreateProgrammes,
-    canCreateProjectRequest,
-    counts,
-    byStatus,
-    recentApplications,
-  } = loaderData;
+  const { actor, user, roleLabel, data } = loaderData;
 
-  const quickActions: QuickAction[] = [
-    canCreateProjects && {
-      to: "/projects/new",
-      label: "Create Project",
-      icon: Folder,
-    },
-    canCreateProgrammes && {
-      to: "/programmes/new",
-      label: "Create Programme",
-      icon: BookOpen,
-    },
-    canCreateProjectRequest && {
-      to: "/project-requests/new",
-      label: "Create Project Request",
-      icon: GitPullRequestArrow,
-    },
-  ].filter(Boolean) as QuickAction[];
+  if (data.variant === "submissions") {
+    return (
+      <PdPncDashboardView
+        actor={actor}
+        user={user}
+        roleLabel={roleLabel}
+        counts={data.counts}
+        approvals={data.approvals}
+        requests={data.requests}
+      />
+    );
+  }
 
   return (
-    <Shell
+    <IoDashboardView
       actor={actor}
       user={user}
-      title="Dashboard"
-      workstream="Internship"
-      actions={<QuickActions actions={quickActions} />}
-    >
-      <div className="space-y-8">
-        {/* Greeting */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Heading as="h2" size="lg">
-            Welcome back, {user.name}
-          </Heading>
-          <Badge variant="info">{roleLabel}</Badge>
-        </div>
-
-        {/* Headline figures — only the resources this actor may read appear. */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {canListApplications ? (
-            <StatCard
-              icon={ClipboardList}
-              label="Applications"
-              value={counts.applications}
-              to="/applications"
-            />
-          ) : null}
-          {canListProgrammes ? (
-            <StatCard
-              icon={GraduationCap}
-              label="Programmes"
-              value={counts.programmes}
-              to="/programmes"
-            />
-          ) : null}
-          {canListProjects ? (
-            <StatCard
-              icon={Folder}
-              label="Projects"
-              value={counts.projects}
-              to="/projects"
-            />
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Recent applications */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Recent applications</CardTitle>
-              <CardDescription>
-                The latest applications you can access, newest first.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentApplications.length > 0 ? (
-                <ul className="divide-y divide-border">
-                  {recentApplications.map((application) => (
-                    <li
-                      key={application.id}
-                      className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                    >
-                      <div className="min-w-0">
-                        <Text className="truncate font-medium">
-                          {application.fullName}
-                        </Text>
-                        <Text size="xs" variant="muted">
-                          {new Date(application.createdAt).toLocaleDateString(
-                            "en-GB",
-                            { day: "numeric", month: "short", year: "numeric" },
-                          )}
-                        </Text>
-                      </div>
-                      <Badge variant={STATUS_VARIANT[application.status]}>
-                        {STATUS_LABEL[application.status]}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <Text size="sm" variant="muted">
-                  No applications to show yet.
-                </Text>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Status breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle>By status</CardTitle>
-              <CardDescription>Applications across the pipeline.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {APPLICATION_STATUSES.map((status) => (
-                <div
-                  key={status}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <Badge variant={STATUS_VARIANT[status]}>
-                    {STATUS_LABEL[status]}
-                  </Badge>
-                  <Text size="sm" weight="medium">
-                    {byStatus[status]}
-                  </Text>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </Shell>
+      roleLabel={roleLabel}
+      canListApplications={data.canListApplications}
+      canListProgrammes={data.canListProgrammes}
+      canListProjects={data.canListProjects}
+      canCreateProjects={data.canCreateProjects}
+      canCreateProgrammes={data.canCreateProgrammes}
+      canCreateProjectRequest={data.canCreateProjectRequest}
+      counts={data.counts}
+      byStatus={data.byStatus}
+      recentApplications={data.recentApplications}
+    />
   );
 }

@@ -95,7 +95,7 @@ export const NAV: NavSection[] = [
         to: "/analytics",
         label: "Analytics",
         icon: BarChart3,
-        roles: [ROLES.ioAdmin, ROLES.pdPnc, ROLES.director],
+        roles: [ROLES.ioAdmin, ROLES.director],
       },
     ],
   },

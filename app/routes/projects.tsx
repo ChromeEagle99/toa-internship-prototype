@@ -1,45 +1,31 @@
-import { Plus } from "lucide-react";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Text } from "@/components/ui/text";
 
-import { Shell } from "~/components/shell";
 import { requireCan } from "~/auth/current-user.server";
-import {
-  ROLE_LABELS,
-  can,
-  projectsRepository,
-  resolveUser,
-  type ProjectEntry,
-  type ProjectStatus,
-} from "~/data";
+import { ROLE_LABELS, can, projectsRepository, resolveUser } from "~/data";
+
+import { ProjectsListView } from "~/features/projects/views/projects-list-view";
+import { SubmissionsReviewView } from "~/features/projects/views/submissions-review-view";
+import { projectsVariantFor } from "~/features/projects/view-for";
+import { SAMPLE_APPROVALS, SAMPLE_REQUESTS } from "~/features/projects/submissions-data";
 
 import type { Route } from "./+types/projects";
 
 /**
- * Projects index. Guarded by the same policy at the door and the data layer:
+ * Projects — one URL, several faces. This route is a thin orchestrator: it guards
+ * access, resolves the actor's {@link projectsVariantFor view variant}, loads only
+ * that variant's data, and hands off to a self-contained view that owns its Shell.
+ *
+ * Access is guarded at the door and the data layer:
  *   1. `requireCan(... "list", "projects")` gates the route — a role without the
  *      grant gets a 403 before any data is read.
- *   2. `projectsRepository.as(actor).list()` returns only the rows the actor may
- *      see. The "New project" action mirrors the `create` grant.
+ *   2. The list variant reads through `projectsRepository.as(actor)`, so it only
+ *      returns rows the actor may see.
+ *
+ * Adding a role's bespoke Projects page: add a variant in `view-for.tsx`, a branch
+ * here, and a view file under `features/projects/views/`. No existing view changes.
  */
 
 export function meta() {
@@ -48,120 +34,59 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const actor = await requireCan(request, "list", "projects");
-  const [res, user] = await Promise.all([
-    projectsRepository.as(actor).list(),
-    resolveUser(actor.id),
-  ]);
+  const dbUser = await resolveUser(actor.id);
+  const user = {
+    name: dbUser?.name ?? ROLE_LABELS[actor.role],
+    email: dbUser?.email,
+  };
 
+  if (projectsVariantFor(actor.role) === "submissions") {
+    // PD P&C: submission-review surface. Placeholder rows until a submissions
+    // repository exists (see `features/projects/submissions-data.ts`).
+    return {
+      actor,
+      user,
+      data: {
+        variant: "submissions" as const,
+        approvals: SAMPLE_APPROVALS,
+        requests: SAMPLE_REQUESTS,
+      },
+    };
+  }
+
+  const res = await projectsRepository.as(actor).list();
   return {
     actor,
-    user: {
-      name: user?.name ?? ROLE_LABELS[actor.role],
-      email: user?.email,
+    user,
+    data: {
+      variant: "list" as const,
+      projects: res.ok ? res.data : [],
+      canCreate: can(actor, "create", "projects"),
     },
-    projects: res.ok ? res.data : [],
-    canCreate: can(actor, "create", "projects"),
   };
 }
 
-/** Project status → badge variant. */
-const STATUS_VARIANT: Record<ProjectStatus, BadgeProps["variant"]> = {
-  open: "info",
-  "in-progress": "warning",
-  confirmed: "success",
-};
-
-/** Human-readable status label. */
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  open: "Open",
-  "in-progress": "In progress",
-  confirmed: "Confirmed",
-};
-
-/** A readable minimum-duration string. */
-function minDuration(project: ProjectEntry): string {
-  return project.minDurationWeeks ? `${project.minDurationWeeks} weeks` : "—";
-}
-
 export default function Projects({ loaderData }: Route.ComponentProps) {
-  const { actor, user, projects, canCreate } = loaderData;
+  const { actor, user, data } = loaderData;
+
+  if (data.variant === "submissions") {
+    return (
+      <SubmissionsReviewView
+        actor={actor}
+        user={user}
+        approvals={data.approvals}
+        requests={data.requests}
+      />
+    );
+  }
 
   return (
-    <Shell
+    <ProjectsListView
       actor={actor}
       user={user}
-      title="Projects"
-      workstream="Internship"
-      actions={
-        canCreate ? (
-          <Link
-            to="/projects/new"
-            className={buttonVariants({ size: "sm", className: "hidden sm:inline-flex" })}
-          >
-            <Plus className="size-4" />
-            New project
-          </Link>
-        ) : null
-      }
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>All projects</CardTitle>
-          <CardDescription>
-            Live, approved projects applicants are matched against. You see the
-            projects your role is permitted to read.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Programme Centre</TableHead>
-                <TableHead>Minimum duration</TableHead>
-                <TableHead className="text-right">Slots filled</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <Text size="sm" variant="muted">
-                      No projects yet. Seed some in the dev database.
-                    </Text>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                projects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.title}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[project.status]}>
-                        {STATUS_LABEL[project.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {project.pc ?? "—"}
-                      </Text>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {minDuration(project)}
-                      </Text>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {project.matched} / {project.slots}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </Shell>
+      projects={data.projects}
+      canCreate={data.canCreate}
+    />
   );
 }
 
@@ -176,7 +101,7 @@ export function ErrorBoundary() {
         <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
         <AlertDescription>
           {is403
-            ? "Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, or Director)."
+            ? "Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, Director, or PD P&C)."
             : "An unexpected error occurred loading this page."}
         </AlertDescription>
       </Alert>

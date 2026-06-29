@@ -84,9 +84,10 @@ export const POLICY: Policy = {
     { resource: "users", actions: "*" },
   ],
   [ROLES.pdPnc]: [
-    // People & Culture: read and list, no edits.
-    { resource: "applications", actions: ["read", "list"] },
-    { resource: "programmes", actions: ["read", "list"] },
+    // People & Culture's surface is the project-submission review: they read and
+    // list projects (to approve submissions and track request fulfilment), and
+    // nothing else. No applications/programmes grant — so neither the data layer
+    // nor the side-nav surfaces those to them. Widen here if their remit grows.
     { resource: "projects", actions: ["read", "list"] },
   ],
   [ROLES.director]: [
