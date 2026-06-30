@@ -4,9 +4,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 
 import { requireCan } from "~/auth/current-user.server";
-import { ROLE_LABELS, can, projectsRepository, resolveUser } from "~/data";
+import {
+  ROLE_LABELS,
+  can,
+  programmesRepository,
+  projectsRepository,
+  resolveUser,
+} from "~/data";
 
-import { ProjectsListView } from "~/features/projects/views/projects-list-view";
+import {
+  ProjectsListView,
+  toProjectRows,
+} from "~/features/projects/views/projects-list-view";
 import { SubmissionsReviewView } from "~/features/projects/views/submissions-review-view";
 import { projectsVariantFor } from "~/features/projects/view-for";
 import { SAMPLE_APPROVALS, SAMPLE_REQUESTS } from "~/features/projects/submissions-data";
@@ -54,13 +63,22 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
-  const res = await projectsRepository.as(actor).list();
+  // Resolve each project's programme (via intakeId) so the list can show it.
+  // Both reads go through `.as(actor)`, so each only returns rows the actor may
+  // see; a denied programmes read just leaves the Programme column blank.
+  const [projectsRes, programmesRes] = await Promise.all([
+    projectsRepository.as(actor).list(),
+    programmesRepository.as(actor).list(),
+  ]);
   return {
     actor,
     user,
     data: {
       variant: "list" as const,
-      projects: res.ok ? res.data : [],
+      rows: toProjectRows(
+        projectsRes.ok ? projectsRes.data : [],
+        programmesRes.ok ? programmesRes.data : [],
+      ),
       canCreate: can(actor, "create", "projects"),
     },
   };
@@ -84,7 +102,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
     <ProjectsListView
       actor={actor}
       user={user}
-      projects={data.projects}
+      rows={data.rows}
       canCreate={data.canCreate}
     />
   );

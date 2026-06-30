@@ -27,6 +27,7 @@ import {
   programmesRepository,
   projectsRepository,
   type Actor,
+  type Project,
   type Repository,
 } from "~/data";
 import { getFileAdapter, usePersistentBackend } from "~/data/adapters/file.server";
@@ -63,6 +64,149 @@ export function meta() {
 /** A fixed dev identity. IO Admin has full CRUD on every resource per POLICY. */
 const DEV_ADMIN: Actor = { id: "dev-admin", role: ROLES.ioAdmin };
 
+/**
+ * Fixed intake windows shared between the seeded programmes and projects. A
+ * project attaches to a programme by carrying that programme's `intakeId`, so
+ * these ids must stay stable across both seed factories.
+ */
+const INTAKES = {
+  "INT-UNI-2026": {
+    intakeId: "INT-UNI-2026",
+    intakeTitle: "2026 Main Intake",
+    applicationOpen: "2026-01-01",
+    applicationClose: "2026-03-31",
+    internshipStart: "2026-06",
+    internshipEnd: "2026-08",
+    durationMonths: 3,
+  },
+  "INT-JC-2026": {
+    intakeId: "INT-JC-2026",
+    intakeTitle: "2026 Main Intake",
+    applicationOpen: "2026-01-01",
+    applicationClose: "2026-03-31",
+    internshipStart: "2026-06",
+    internshipEnd: "2026-08",
+    durationMonths: 3,
+  },
+  "INT-PJC-2026": {
+    intakeId: "INT-PJC-2026",
+    intakeTitle: "2026 Main Intake",
+    applicationOpen: "2026-01-01",
+    applicationClose: "2026-03-31",
+    internshipStart: "2026-06",
+    internshipEnd: "2026-08",
+    durationMonths: 3,
+  },
+} as const;
+
+/**
+ * Seed projects spread across the Projects list's lifecycle tabs. `reviewStatus`
+ * decides the tab (pending → Pending Review, approved → Project Pool, allocated →
+ * Allocated Projects); `intakeId` attaches each to a programme so the Programme
+ * column populates.
+ */
+const SEED_PROJECTS: Partial<Project>[] = [
+  // ── Pending Review ──
+  {
+    projectId: "proj-rf-signal",
+    projectTitle: "RF Signal Propagation Modelling",
+    pcCode: "SECC",
+    educationLevel: "University (Undergraduate)",
+    placement: 2,
+    mentorName: "Assoc Prof Rajesh Kumar",
+    mentorEmail: "rajesh.kumar@secc.org.sg",
+    mentorDesignation: "Principal Research Engineer",
+    reviewStatus: "pending",
+    intakeId: "INT-UNI-2026",
+  },
+  {
+    projectId: "proj-data-analytics",
+    projectTitle: "Data Analytics Dashboard for Operations",
+    pcCode: "EDS",
+    educationLevel: "Junior College",
+    placement: 2,
+    mentorName: "Michael Lim",
+    mentorEmail: "michael.lim@eds.org.sg",
+    mentorDesignation: "Principal Cybersecurity Engineer",
+    reviewStatus: "pending",
+    intakeId: "INT-JC-2026",
+  },
+  {
+    projectId: "proj-rf-frequency",
+    projectTitle: "RF Frequency Planning Tool",
+    pcCode: "SECC",
+    educationLevel: "Post-JC / Post-Poly",
+    placement: 1,
+    mentorName: "Grace Ho",
+    mentorEmail: "grace.ho@secc.org.sg",
+    mentorDesignation: "Systems Engineer",
+    reviewStatus: "pending",
+    intakeId: "INT-PJC-2026",
+  },
+  // ── Project Pool (approved, awaiting allocation) ──
+  {
+    projectId: "proj-autonomous-nav",
+    projectTitle: "Autonomous Navigation Stack",
+    pcCode: "SECC",
+    educationLevel: "University (Undergraduate)",
+    placement: 3,
+    mentorName: "Dr Tan Wei Ming",
+    mentorEmail: "weiming.tan@secc.org.sg",
+    mentorDesignation: "Senior Robotics Engineer",
+    reviewStatus: "approved",
+    intakeId: "INT-UNI-2026",
+  },
+  {
+    projectId: "proj-threat-intel",
+    projectTitle: "Threat Intelligence Pipeline",
+    pcCode: "EDS",
+    educationLevel: "University (Undergraduate)",
+    placement: 2,
+    mentorName: "Nurul Aisyah",
+    mentorEmail: "nurul.aisyah@eds.org.sg",
+    mentorDesignation: "Lead Cybersecurity Analyst",
+    reviewStatus: "approved",
+    intakeId: "INT-UNI-2026",
+  },
+  // ── Allocated Projects ──
+  {
+    projectId: "proj-sensor-fusion",
+    projectTitle: "Sensor Fusion Prototype",
+    pcCode: "SECC",
+    educationLevel: "University (Undergraduate)",
+    placement: 2,
+    mentorName: "Dr Lim Wei",
+    mentorEmail: "wei.lim@secc.org.sg",
+    mentorDesignation: "Principal Member of Technical Staff",
+    reviewStatus: "allocated",
+    intakeId: "INT-UNI-2026",
+  },
+  {
+    projectId: "proj-secure-comms",
+    projectTitle: "Secure Comms Gateway",
+    pcCode: "EDS",
+    educationLevel: "Junior College",
+    placement: 1,
+    mentorName: "Kenneth Wong",
+    mentorEmail: "kenneth.wong@eds.org.sg",
+    mentorDesignation: "Senior Network Engineer",
+    reviewStatus: "allocated",
+    intakeId: "INT-JC-2026",
+  },
+  {
+    projectId: "proj-ml-anomaly",
+    projectTitle: "ML Anomaly Detection",
+    pcCode: "EDS",
+    educationLevel: "Post-JC / Post-Poly",
+    placement: 2,
+    mentorName: "Priya Subramaniam",
+    mentorEmail: "priya.s@eds.org.sg",
+    mentorDesignation: "Data Scientist",
+    reviewStatus: "allocated",
+    intakeId: "INT-PJC-2026",
+  },
+];
+
 /** One browsable table: its repository and a seed factory. Columns are derived. */
 interface CollectionConfig {
   key: string;
@@ -77,12 +221,30 @@ const COLLECTIONS: CollectionConfig[] = [
     key: "programmes",
     label: "Programmes",
     repo: programmesRepository,
+    // Friendly PKs (PROG-xxxx) and fixed intake ids so the Projects below can
+    // attach to them — the Projects list resolves each project's programme via
+    // its `intakeId` matching one of these intake windows.
     seed: () => [
-      exampleProgramme(),
       exampleProgramme({
-        programmeTitle: "Polytechnic Industry Attachment",
-        educationLevel: "Polytechnic",
-        status: "Draft",
+        programmeId: "PROG-0009",
+        programmeTitle: "University Internship 2026",
+        educationLevel: "University (Undergraduate)",
+        status: "Active",
+        intakeWindows: [INTAKES["INT-UNI-2026"]],
+      }),
+      exampleProgramme({
+        programmeId: "PROG-0010",
+        programmeTitle: "Junior College Internship 2026",
+        educationLevel: "Junior College",
+        status: "Active",
+        intakeWindows: [INTAKES["INT-JC-2026"]],
+      }),
+      exampleProgramme({
+        programmeId: "PROG-0011",
+        programmeTitle: "Post-JC / Post-Poly Internship 2026",
+        educationLevel: "Post-JC / Post-Poly",
+        status: "Active",
+        intakeWindows: [INTAKES["INT-PJC-2026"]],
       }),
     ],
   },
@@ -90,14 +252,10 @@ const COLLECTIONS: CollectionConfig[] = [
     key: "projects",
     label: "Projects",
     repo: projectsRepository,
-    seed: () => [
-      exampleProject(),
-      exampleProject({
-        projectTitle: "Embedded firmware for UAV payload",
-        pcCode: "ST Engineering",
-        reviewStatus: "in-progress",
-      }),
-    ],
+    // A spread across the lifecycle tabs (Pending Review / Project Pool /
+    // Allocated), each attached to a programme intake so the Programme column
+    // populates. `reviewStatus` drives which tab a row lands in.
+    seed: () => SEED_PROJECTS.map((overrides) => exampleProject(overrides)),
   },
   {
     key: "applications",
