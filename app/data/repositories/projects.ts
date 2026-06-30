@@ -4,64 +4,100 @@ import { createRepository, newId } from "../repository";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- *  PROJECTS — a simple example schema. Subject to change.
+ *  PROJECT — the BA's agreed field model (see the data diagram).
  * ─────────────────────────────────────────────────────────────────────────────
- *  This models the END of the project lifecycle: the live, approved ProjectEntry
- *  that applicants are matched against. The earlier stages —
+ *  A project a PC offers for one education level. It carries matching tags, an
+ *  internship period, mentor details, and a small set of review/system fields.
+ *  There is NO FK to Project Request — projects reconcile to a request via
+ *  pc_code + education_level (soft match). `intakeId` is null until the project
+ *  is attached to a programme intake.
  *
- *      ProjectRequest  →  ProjectSubmissionBatch { SubmittedProject[] }  →  ProjectEntry
- *      (IO asks a PC)     (PC uploads, IO/DCE reviews)                     (this entity)
- *
- *  — plus the Programme Centre models (PCEntry / PCProgramme) are intentionally
- *  left out of this first cut; add them as their own repositories when needed.
+ *  Naming + optionality conventions are documented in `programmes.ts`.
  */
 
-export const PROJECT_STATUSES = ["confirmed", "in-progress", "open"] as const;
-export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+export const ProjectSchema = z.object({
+  // USER FIELDS — PROJECT INFO
+  projectTitle: z.string().min(1),
+  /** project_scope — TEXT, Required. */
+  projectScope: z.string().min(1),
+  /** pc_code — Programme Centre code. */
+  pcCode: z.string().min(1),
+  /** education_level — ENUM, Required; value set TBD. */
+  educationLevel: z.string().min(1),
+  /** placement — INT placements offered for this education level. */
+  placement: z.number().int().nonnegative(),
 
-/** A period a project cannot host an intern (e.g. lab shutdown). Dates YYYY-MM-DD. */
-export const BlackoutPeriodSchema = z.object({
-  start: z.string(),
-  end: z.string(),
+  // USER FIELDS — MATCHING TAGS (predefined lists; selection widgets, not marked
+  // required on the diagram → optional here).
+  /** discipline_of_study — ENUM[] multi-select; value set TBD. */
+  disciplineOfStudy: z.array(z.string()).optional(),
+  /** skills — ENUM[] multi-select; value set TBD. */
+  skills: z.array(z.string()).optional(),
+  /** tech_domain — ENUM single-select; value set TBD. */
+  techDomain: z.string().optional(),
+  /** emerging_areas — ENUM single-select; value set TBD. */
+  emergingAreas: z.string().optional(),
+
+  // USER FIELDS — INTERNSHIP PERIOD
+  /** internship_start — MONTH/YEAR (YYYY-MM). */
+  internshipStart: z.string().min(1),
+  /** internship_end — MONTH/YEAR (YYYY-MM). */
+  internshipEnd: z.string().min(1),
+  /** duration_months — INT, Required. */
+  durationMonths: z.number().int().nonnegative(),
+
+  // USER FIELDS — MENTOR
+  mentorName: z.string().min(1),
+  mentorEmail: z.string().email(),
+  mentorDesignation: z.string().min(1),
+  /** mentor_writeup — TEXT, Optional. */
+  mentorWriteup: z.string().optional(),
+
+  // SYSTEM FIELDS
+  /** project_id — PK. */
+  projectId: z.string().min(1),
+  /** intake_id — Nullable FK → Intake (null until attached). */
+  intakeId: z.string().nullish(),
+  /** review_status — ENUM, System-set; value set TBD. */
+  reviewStatus: z.string().optional(),
+  /** submitted_by — FK → User (AD). */
+  submittedBy: z.string().optional(),
+  /** reviewed_by — FK → User (IO Admin). */
+  reviewedBy: z.string().optional(),
+  /** submitted_at — TIMESTAMP, Auto (ISO string). */
+  submittedAt: z.string().optional(),
 });
-export type BlackoutPeriod = z.infer<typeof BlackoutPeriodSchema>;
+export type Project = z.infer<typeof ProjectSchema>;
 
-export const ProjectEntrySchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  /** The Programme this project belongs to. */
-  programmeId: z.string().optional(),
-  /** The Programme Centre hosting it. */
-  pc: z.string().optional(),
-
-  slots: z.number().int().nonnegative(),
-  matched: z.number().int().nonnegative(),
-  status: z.enum(PROJECT_STATUSES),
-  archived: z.boolean().optional(),
-
-  // Availability-matching fields.
-  minDurationWeeks: z.number().int().positive().optional(),
-  blackoutPeriods: z.array(BlackoutPeriodSchema).optional(),
-});
-export type ProjectEntry = z.infer<typeof ProjectEntrySchema>;
-
-export const projectsRepository = createRepository<ProjectEntry>({
+export const projectsRepository = createRepository<Project>({
   resource: "projects",
-  schema: ProjectEntrySchema,
-  identify: (project) => project.id,
+  schema: ProjectSchema,
+  identify: (project) => project.projectId,
 });
 
-/** A minimal valid live project, for seeding the dev store. */
-export function exampleProject(overrides: Partial<ProjectEntry> = {}): ProjectEntry {
+/** A minimal valid project, for seeding the dev store. */
+export function exampleProject(overrides: Partial<Project> = {}): Project {
   return {
-    id: newId(),
-    title: "Acoustic signal classification with ML",
-    pc: "DSO National Laboratories",
-    slots: 3,
-    matched: 1,
-    status: "open",
-    minDurationWeeks: 8,
-    blackoutPeriods: [{ start: "2026-07-01", end: "2026-07-07" }],
+    projectTitle: "Acoustic signal classification with ML",
+    projectScope:
+      "Build and evaluate ML models that classify acoustic signatures from field sensors.",
+    pcCode: "DSO",
+    educationLevel: "University (Undergraduate)",
+    placement: 3,
+    disciplineOfStudy: ["Computer Science", "Electrical Engineering"],
+    skills: ["Python", "Machine Learning"],
+    techDomain: "Artificial Intelligence",
+    emergingAreas: "Edge AI",
+    internshipStart: "2026-06",
+    internshipEnd: "2026-08",
+    durationMonths: 3,
+    mentorName: "Dr Lim Wei",
+    mentorEmail: "wei.lim@dso.org.sg",
+    mentorDesignation: "Principal Member of Technical Staff",
+    projectId: newId(),
+    intakeId: null,
+    reviewStatus: "pending",
+    submittedAt: "2026-01-15T00:00:00.000Z",
     ...overrides,
   };
 }

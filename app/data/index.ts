@@ -50,27 +50,39 @@ export {
 export {
   programmesRepository,
   ProgrammeSchema,
-  PROG_CATEGORIES,
   PROG_STATUSES,
+  MATCH_TYPES,
   exampleProgramme,
+  CriteriaRuleSchema,
+  CriteriaGroupSchema,
+  IntakeWindowSchema,
+  AttachedProjectSchema,
   type Programme,
-  type ProgCategory,
   type ProgStatus,
+  type MatchType,
   type CriteriaGroup,
-  type CriteriaPathway,
   type CriteriaRule,
   type IntakeWindow,
+  type AttachedProject,
 } from "./repositories/programmes";
 
 export {
   projectsRepository,
-  ProjectEntrySchema,
-  PROJECT_STATUSES,
+  ProjectSchema,
   exampleProject,
-  type ProjectEntry,
-  type ProjectStatus,
-  type BlackoutPeriod,
+  type Project,
 } from "./repositories/projects";
+
+export {
+  projectRequestsRepository,
+  ProjectRequestSchema,
+  RequestLineSchema,
+  SEND_MODES,
+  exampleProjectRequest,
+  type ProjectRequest,
+  type RequestLine,
+  type SendMode,
+} from "./repositories/project-requests";
 
 export {
   usersRepository,
