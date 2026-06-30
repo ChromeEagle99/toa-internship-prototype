@@ -79,7 +79,11 @@ const COLLECTIONS: CollectionConfig[] = [
     repo: programmesRepository,
     seed: () => [
       exampleProgramme(),
-      exampleProgramme({ title: "Polytechnic Industry Attachment", category: ["Poly"], status: "Draft" }),
+      exampleProgramme({
+        programmeTitle: "Polytechnic Industry Attachment",
+        educationLevel: "Polytechnic",
+        status: "Draft",
+      }),
     ],
   },
   {
@@ -88,7 +92,11 @@ const COLLECTIONS: CollectionConfig[] = [
     repo: projectsRepository,
     seed: () => [
       exampleProject(),
-      exampleProject({ title: "Embedded firmware for UAV payload", pc: "ST Engineering", status: "in-progress", matched: 2 }),
+      exampleProject({
+        projectTitle: "Embedded firmware for UAV payload",
+        pcCode: "ST Engineering",
+        reviewStatus: "in-progress",
+      }),
     ],
   },
   {
@@ -112,7 +120,21 @@ function collectionFor(key: string | null): CollectionConfig {
 // ── Generic, schema-agnostic rendering ───────────────────────────────────────
 
 /** Keys shown first when present, so the table stays scannable. The rest follow. */
-const PRIORITY_KEYS = ["id", "title", "fullName", "name", "status"];
+const PRIORITY_KEYS = [
+  "id",
+  "programmeId",
+  "projectId",
+  "title",
+  "programmeTitle",
+  "projectTitle",
+  "fullName",
+  "name",
+  "status",
+  "reviewStatus",
+];
+
+/** Primary-key columns get monospaced, muted treatment. */
+const ID_KEYS = ["id", "programmeId", "projectId"];
 
 function isPrimitive(value: unknown): boolean {
   return value === null || (typeof value !== "object" && typeof value !== "function");
@@ -137,8 +159,9 @@ function deriveColumns(records: Record<string, unknown>[]): string[] {
 /** Render a single cell value compactly; nested data is summarised, full in JSON. */
 function renderCell(key: string, value: unknown): ReactNode {
   if (value === undefined || value === null) return <span className="text-fg-muted">—</span>;
-  if (key === "status" && typeof value === "string") return <Badge variant="subtle">{value}</Badge>;
-  if (key === "id") return <span className="font-mono text-xs text-fg-muted">{String(value)}</span>;
+  if ((key === "status" || key === "reviewStatus") && typeof value === "string")
+    return <Badge variant="subtle">{value}</Badge>;
+  if (ID_KEYS.includes(key)) return <span className="font-mono text-xs text-fg-muted">{String(value)}</span>;
   if (Array.isArray(value)) {
     return value.every(isPrimitive) ? (
       value.join(", ") || <span className="text-fg-muted">—</span>

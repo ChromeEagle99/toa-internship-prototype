@@ -93,6 +93,18 @@ export function createRepository<T>(config: RepositoryConfig<T>): Repository<T> 
       return record;
     },
 
+    // NOTE FOR THE REAL BACKEND — list() is fetch-all-then-filter BY DESIGN:
+    // it pulls the whole collection via `adapter.list`, then validates and applies
+    // row-level auth (`can`) per row in app memory. That is fine for the file/memory
+    // prototype, but it does NOT scale and is why pagination is deferred:
+    //   • Cosmetic { limit, offset } can be added here by slicing `visible` — but it
+    //     still loads the whole table, so it buys nothing on scale.
+    //   • Real pushdown pagination (SQL LIMIT/OFFSET) is blocked by THIS ordering:
+    //     paginating before the auth filter yields unstable page sizes (rows the
+    //     actor can't read get dropped after the slice). To fix it, the row-level
+    //     predicate (`where` in access/permissions.ts — currently a JS closure) must
+    //     move INTO the query, and StorageAdapter.list must gain limit/offset/order.
+    //   Do that in the SQL adapter + a query-aware list contract, not here.
     async list(actor) {
       const allowed = authorize(actor, "list", resource);
       if (!allowed.ok) return allowed;
