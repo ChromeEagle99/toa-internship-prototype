@@ -25,11 +25,15 @@ import { ApplicationSchema } from "../app/data/repositories/applications";
 import {
   ProgrammeSchema,
   CriteriaGroupSchema,
-  CriteriaPathwaySchema,
   CriteriaRuleSchema,
   IntakeWindowSchema,
+  AttachedProjectSchema,
 } from "../app/data/repositories/programmes";
-import { ProjectEntrySchema, BlackoutPeriodSchema } from "../app/data/repositories/projects";
+import { ProjectSchema } from "../app/data/repositories/projects";
+import {
+  ProjectRequestSchema,
+  RequestLineSchema,
+} from "../app/data/repositories/project-requests";
 
 // ── Configuration: the only thing you edit when the model changes ─────────────
 
@@ -38,7 +42,8 @@ const COLLECTIONS = [
   { name: "User", schema: UserSchema },
   { name: "Application", schema: ApplicationSchema },
   { name: "Programme", schema: ProgrammeSchema },
-  { name: "ProjectEntry", schema: ProjectEntrySchema },
+  { name: "Project", schema: ProjectSchema },
+  { name: "ProjectRequest", schema: ProjectRequestSchema },
 ] as const;
 
 /**
@@ -48,16 +53,39 @@ const COLLECTIONS = [
  */
 const EMBEDDED = [
   { name: "CriteriaGroup", schema: CriteriaGroupSchema },
-  { name: "CriteriaPathway", schema: CriteriaPathwaySchema },
   { name: "CriteriaRule", schema: CriteriaRuleSchema },
   { name: "IntakeWindow", schema: IntakeWindowSchema },
-  { name: "BlackoutPeriod", schema: BlackoutPeriodSchema },
+  { name: "AttachedProject", schema: AttachedProjectSchema },
+  { name: "RequestLine", schema: RequestLineSchema },
 ] as const;
+
+/**
+ * Primary key field per entity. Collections no longer all key on `id`
+ * (`programmeId`/`projectId`/`requestId`), and embedded rows carry their own
+ * child ids — so a name like `projectId` is a PK on `Project` but an FK on
+ * `AttachedProject`. This map disambiguates; defaults to `id` when unlisted.
+ */
+const PRIMARY_KEYS: Record<string, string> = {
+  User: "id",
+  Application: "id",
+  Programme: "programmeId",
+  Project: "projectId",
+  ProjectRequest: "requestId",
+  CriteriaGroup: "criteriaGroupId",
+  CriteriaRule: "criteriaRuleId",
+  IntakeWindow: "intakeId",
+  RequestLine: "lineId",
+};
 
 /** Foreign keys by naming convention: field name → the collection it points at. */
 const FOREIGN_KEYS: Record<string, string> = {
   applicantId: "User",
-  programmeId: "Programme",
+  createdBy: "User",
+  submittedBy: "User",
+  reviewedBy: "User",
+  requestedBy: "User",
+  projectId: "Project",
+  intakeId: "IntakeWindow",
 };
 
 // ── JSON-Schema helpers ───────────────────────────────────────────────────────
@@ -93,7 +121,7 @@ function typeToken(node: JsonNode): string {
 }
 
 /** The human note that follows a field: enum values, FK target, optionality. */
-function comment(name: string, node: JsonNode, optional: boolean): string {
+function comment(name: string, node: JsonNode, optional: boolean, isPk = false): string {
   const parts: string[] = [];
   const enumNode = Array.isArray(node.enum)
     ? node
@@ -102,7 +130,8 @@ function comment(name: string, node: JsonNode, optional: boolean): string {
       : null;
   if (enumNode) parts.push(enumNode.enum.join(" | "));
   if (Array.isArray(node.anyOf)) parts.push(node.anyOf.map(typeToken).join(" | "));
-  if (FOREIGN_KEYS[name]) parts.push(`→ ${FOREIGN_KEYS[name]}`);
+  // A PK that happens to share a name with an FK convention isn't a foreign key.
+  if (!isPk && FOREIGN_KEYS[name]) parts.push(`→ ${FOREIGN_KEYS[name]}`);
   if (node.format === "email") parts.push("email");
   if (optional) parts.push("optional");
   return parts.join(", ");
@@ -113,6 +142,8 @@ function comment(name: string, node: JsonNode, optional: boolean): string {
 interface Entity {
   name: string;
   json: JsonNode;
+  /** The entity's primary key field, if any (see PRIMARY_KEYS). */
+  pk?: string;
 }
 interface Relationship {
   from: string;
@@ -139,8 +170,9 @@ function renderEntity(entity: Entity, relationships: Relationship[]): string {
       continue;
     }
     const optional = !required.has(name);
-    const key = name === "id" ? " PK" : FOREIGN_KEYS[name] ? " FK" : "";
-    const note = comment(name, node, optional);
+    const isPk = name === entity.pk;
+    const key = isPk ? " PK" : FOREIGN_KEYS[name] ? " FK" : "";
+    const note = comment(name, node, optional, isPk);
     const quoted = note ? ` "${note}"` : "";
     lines.push(`        ${typeToken(node)} ${name}${key}${quoted}`);
   }
@@ -169,13 +201,14 @@ function buildDiagram(): string {
   const collectionEntities: Entity[] = COLLECTIONS.map((c) => {
     const json = z.toJSONSchema(c.schema, opts) as JsonNode;
     Object.assign(defs, json.$defs ?? {});
-    return { name: c.name, json };
+    return { name: c.name, json, pk: PRIMARY_KEYS[c.name] };
   });
 
   // Keep embedded entities in declared order, only those actually referenced.
   const embeddedEntities: Entity[] = EMBEDDED.filter((e) => defs[e.name]).map((e) => ({
     name: e.name,
     json: defs[e.name],
+    pk: PRIMARY_KEYS[e.name],
   }));
 
   const entities = [...collectionEntities, ...embeddedEntities];
@@ -185,6 +218,7 @@ function buildDiagram(): string {
   for (const c of collectionEntities) {
     const props: Record<string, JsonNode> = c.json.properties ?? {};
     for (const field of Object.keys(props)) {
+      if (field === PRIMARY_KEYS[c.name]) continue; // the entity's own PK isn't an FK to itself
       const target = FOREIGN_KEYS[field];
       if (target) relationships.push({ from: target, to: c.name, many: true, label: field });
     }
@@ -204,15 +238,19 @@ const END = "<!-- ERD:END -->";
 
 const FOOTER = `## Notes
 
-- **\`programmeId\` and \`pc\` are soft links.** They're plain \`string\` ids with no
-  referential integrity enforced by the store — the relationship is by convention.
-- **\`pc\` (Programme Centre) is a string today**, not its own entity. The PC models
-  are deliberately deferred — see the header comment in
+- **All FKs are soft links.** They're plain \`string\` ids with no referential
+  integrity enforced by the store — every relationship is by convention.
+- **Project ↔ Project Request has no FK.** They reconcile via \`pcCode\` +
+  \`educationLevel\` (a soft match), and a project's \`intakeId\` is null until it's
+  attached to a programme intake.
+- **\`pc\` / \`pcCode\` (Programme Centre) is a string today**, not its own entity.
+  The PC models are deliberately deferred — see the header comment in
   [projects.ts](../app/data/repositories/projects.ts).
 - **Users carry the role; the policy is code.** What each role *may do* lives in
   [access/permissions.ts](../app/data/access/permissions.ts), not in the data.
-- The embedded value objects are drawn as separate boxes for clarity — they
-  serialise as nested arrays inside their parent record's JSON.`;
+- The embedded value objects (intakes, criteria groups/rules, attached projects,
+  request lines) are drawn as separate boxes for clarity — they serialise as
+  nested arrays inside their parent record's JSON.`;
 
 function buildMarkdown(diagram: string): string {
   return `# Data model (ER diagram)

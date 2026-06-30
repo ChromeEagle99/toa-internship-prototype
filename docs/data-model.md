@@ -18,13 +18,16 @@ join stored collections; the rest are embedded value objects (nested JSON in a p
 ```mermaid
 erDiagram
     User ||--o{ Application : "applicantId"
-    Programme ||--o{ ProjectEntry : "programmeId"
-    Programme ||--o{ CriteriaGroup : "requirements[] (embedded)"
+    User ||--o{ Programme : "createdBy"
+    IntakeWindow ||--o{ Project : "intakeId"
+    User ||--o{ Project : "submittedBy"
+    User ||--o{ Project : "reviewedBy"
+    User ||--o{ ProjectRequest : "requestedBy"
     Programme ||--o{ IntakeWindow : "intakeWindows[] (embedded)"
-    ProjectEntry ||--o{ BlackoutPeriod : "blackoutPeriods[] (embedded)"
+    Programme ||--o{ CriteriaGroup : "eligibilityCriteria[] (embedded)"
+    Programme ||--o{ AttachedProject : "attachedProjects[] (embedded)"
+    ProjectRequest ||--o{ RequestLine : "lines[] (embedded)"
     CriteriaGroup ||--o{ CriteriaRule : "rules[] (embedded)"
-    CriteriaGroup ||--o{ CriteriaPathway : "pathways[] (embedded)"
-    CriteriaPathway ||--o{ CriteriaRule : "rules[] (embedded)"
 
     User {
         string id PK
@@ -40,54 +43,95 @@ erDiagram
         string createdAt
     }
     Programme {
-        string id PK
-        string title
-        enum[] category "JC | Post-JC | Poly | Post-Poly | University | YDSP"
-        enum status "Draft | Active | Completed"
-        number num
-        string appOpen "optional"
-        string appDeadline "optional"
-        string start "optional"
-        string end "optional"
-        string timeline "optional"
-        number daysLeft "optional"
-        string description "optional"
+        string educationLevel
+        string programmeTitle
+        string programmeDesc "optional"
         string formTemplate "optional"
-        number capacity "optional"
+        string programmeId PK
+        enum status "Draft | Active | Completed"
+        number placements "optional"
+        string createdBy FK "→ User, optional"
+        string createdAt "optional"
+        string updatedAt "optional"
     }
-    ProjectEntry {
-        string id PK
-        string title
-        string programmeId FK "→ Programme, optional"
-        string pc "optional"
-        number slots
-        number matched
-        enum status "confirmed | in-progress | open"
-        boolean archived "optional"
-        number minDurationWeeks "optional"
+    Project {
+        string projectTitle
+        string projectScope
+        string pcCode
+        string educationLevel
+        number placement
+        string[] disciplineOfStudy "optional"
+        string[] skills "optional"
+        string techDomain "optional"
+        string emergingAreas "optional"
+        string internshipStart
+        string internshipEnd
+        number durationMonths
+        string mentorName
+        string mentorEmail "email"
+        string mentorDesignation
+        string mentorWriteup "optional"
+        string projectId PK
+        union intakeId FK "string | null, → IntakeWindow, optional"
+        string reviewStatus "optional"
+        string submittedBy FK "→ User, optional"
+        string reviewedBy FK "→ User, optional"
+        string submittedAt "optional"
+    }
+    ProjectRequest {
+        enum sendMode "individual | combined"
+        string emailTemplateId
+        string deadline
+        string pc
+        string headName "optional"
+        string[] ccRecipients "optional"
+        string requestId PK
+        string uploadToken "optional"
+        string senderName "optional"
+        string sentDate "optional"
+        string status "optional"
+        number createdCount "optional"
+        number uploadedCount "optional"
+        string requestedBy FK "→ User, optional"
+        string createdAt "optional"
     }
     CriteriaGroup {
+        string criteriaGroupId PK "optional"
         enum matchType "ALL | ANY"
     }
-    CriteriaPathway {
-    }
     CriteriaRule {
-        string type
+        string criteriaRuleId PK "optional"
+        string criteriaType
         string operator
-        union value "string | string[]"
+        any value
         string gradeValue "optional"
         string[] institutions "optional"
+        string optionId "optional"
     }
     IntakeWindow {
-        string appOpen
-        string appClose
-        string start
-        string end
-        number capacity "optional"
+        string intakeId PK "optional"
+        string intakeTitle "optional"
+        string applicationOpen
+        string applicationClose
+        string internshipStart "optional"
+        string internshipEnd "optional"
+        number durationMonths "optional"
     }
-    BlackoutPeriod {
-        string start
-        string end
+    AttachedProject {
+        string projectId FK "→ Project"
+        string projectIntakeId "optional"
+        boolean attachSelected
+        string[] eligibleProjectPool "optional"
+        boolean educationLevelMatch "optional"
+        boolean periodWithinIntake "optional"
+        string projectApprovalStatus "optional"
+    }
+    RequestLine {
+        string lineId PK "optional"
+        string educationLevel
+        number placementsRequested
+        number placementsSubmitted "optional"
+        number placementsGap "optional"
     }
 ```
 
@@ -95,12 +139,16 @@ erDiagram
 
 ## Notes
 
-- **`programmeId` and `pc` are soft links.** They're plain `string` ids with no
-  referential integrity enforced by the store — the relationship is by convention.
-- **`pc` (Programme Centre) is a string today**, not its own entity. The PC models
-  are deliberately deferred — see the header comment in
+- **All FKs are soft links.** They're plain `string` ids with no referential
+  integrity enforced by the store — every relationship is by convention.
+- **Project ↔ Project Request has no FK.** They reconcile via `pcCode` +
+  `educationLevel` (a soft match), and a project's `intakeId` is null until it's
+  attached to a programme intake.
+- **`pc` / `pcCode` (Programme Centre) is a string today**, not its own entity.
+  The PC models are deliberately deferred — see the header comment in
   [projects.ts](../app/data/repositories/projects.ts).
 - **Users carry the role; the policy is code.** What each role *may do* lives in
   [access/permissions.ts](../app/data/access/permissions.ts), not in the data.
-- The embedded value objects are drawn as separate boxes for clarity — they
-  serialise as nested arrays inside their parent record's JSON.
+- The embedded value objects (intakes, criteria groups/rules, attached projects,
+  request lines) are drawn as separate boxes for clarity — they serialise as
+  nested arrays inside their parent record's JSON.
