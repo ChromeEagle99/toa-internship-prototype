@@ -1,7 +1,8 @@
 import { Upload, User } from "lucide-react";
+import { Link } from "react-router";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -86,10 +87,13 @@ export function SubmissionsReviewView({
       title="Project Submission Requests"
       workstream="Internship"
       actions={
-        <Button size="sm" className="hidden sm:inline-flex">
+        <Link
+          to="/projects/upload"
+          className={buttonVariants({ size: "sm", className: "hidden sm:inline-flex" })}
+        >
           <Upload className="size-4" />
           Upload Projects
-        </Button>
+        </Link>
       }
     >
       <div className="space-y-8">
