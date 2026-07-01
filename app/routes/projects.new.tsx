@@ -80,7 +80,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       email: user?.email,
     },
     programmes: programmesRes.ok
-      ? programmesRes.data.map((p) => ({ id: p.id, title: p.title }))
+      ? programmesRes.data.map((p) => ({ id: p.programmeId, title: p.programmeTitle }))
       : [],
   };
 }

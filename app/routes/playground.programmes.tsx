@@ -83,7 +83,7 @@ export default function Programmes({ loaderData }: Route.ComponentProps) {
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Category</TableHead>
+              <TableHead>Education level</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -97,14 +97,14 @@ export default function Programmes({ loaderData }: Route.ComponentProps) {
               </TableRow>
             ) : (
               programmes.map((programme) => (
-                <TableRow key={programme.id}>
-                  <TableCell className="font-medium">{programme.title}</TableCell>
+                <TableRow key={programme.programmeId}>
+                  <TableCell className="font-medium">{programme.programmeTitle}</TableCell>
                   <TableCell>
                     <Badge variant="subtle">{programme.status}</Badge>
                   </TableCell>
                   <TableCell>
                     <Text size="xs" variant="muted">
-                      {programme.category.join(", ")}
+                      {programme.educationLevel}
                     </Text>
                   </TableCell>
                 </TableRow>
