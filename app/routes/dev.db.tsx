@@ -70,11 +70,20 @@ const DEV_ADMIN: Actor = { id: "dev-admin", role: ROLES.ioAdmin };
  * these ids must stay stable across both seed factories.
  */
 const INTAKES = {
+  "INT-UNI-2025": {
+    intakeId: "INT-UNI-2025",
+    intakeTitle: "2025 Main Intake",
+    applicationOpen: "2025-07-01",
+    applicationClose: "2025-10-31",
+    internshipStart: "2025-12",
+    internshipEnd: "2026-02",
+    durationMonths: 3,
+  },
   "INT-UNI-2026": {
     intakeId: "INT-UNI-2026",
     intakeTitle: "2026 Main Intake",
-    applicationOpen: "2026-01-01",
-    applicationClose: "2026-03-31",
+    applicationOpen: "2026-02-01",
+    applicationClose: "2026-06-30",
     internshipStart: "2026-06",
     internshipEnd: "2026-08",
     durationMonths: 3,
@@ -82,19 +91,19 @@ const INTAKES = {
   "INT-JC-2026": {
     intakeId: "INT-JC-2026",
     intakeTitle: "2026 Main Intake",
-    applicationOpen: "2026-01-01",
-    applicationClose: "2026-03-31",
-    internshipStart: "2026-06",
-    internshipEnd: "2026-08",
+    applicationOpen: "2026-06-15",
+    applicationClose: "2026-08-31",
+    internshipStart: "2026-09",
+    internshipEnd: "2026-11",
     durationMonths: 3,
   },
   "INT-PJC-2026": {
     intakeId: "INT-PJC-2026",
     intakeTitle: "2026 Main Intake",
-    applicationOpen: "2026-01-01",
-    applicationClose: "2026-03-31",
-    internshipStart: "2026-06",
-    internshipEnd: "2026-08",
+    applicationOpen: "2026-07-01",
+    applicationClose: "2026-09-15",
+    internshipStart: "2026-10",
+    internshipEnd: "2026-12",
     durationMonths: 3,
   },
 } as const;
@@ -226,10 +235,19 @@ const COLLECTIONS: CollectionConfig[] = [
     // its `intakeId` matching one of these intake windows.
     seed: () => [
       exampleProgramme({
+        programmeId: "PROG-0007",
+        programmeTitle: "University Internship 2025",
+        educationLevel: "University (Undergraduate)",
+        status: "Completed",
+        applicationsCount: 1,
+        intakeWindows: [INTAKES["INT-UNI-2025"]],
+      }),
+      exampleProgramme({
         programmeId: "PROG-0009",
         programmeTitle: "University Internship 2026",
         educationLevel: "University (Undergraduate)",
         status: "Active",
+        applicationsCount: 41,
         intakeWindows: [INTAKES["INT-UNI-2026"]],
       }),
       exampleProgramme({
@@ -237,6 +255,7 @@ const COLLECTIONS: CollectionConfig[] = [
         programmeTitle: "Junior College Internship 2026",
         educationLevel: "Junior College",
         status: "Active",
+        applicationsCount: 0,
         intakeWindows: [INTAKES["INT-JC-2026"]],
       }),
       exampleProgramme({
@@ -244,6 +263,7 @@ const COLLECTIONS: CollectionConfig[] = [
         programmeTitle: "Post-JC / Post-Poly Internship 2026",
         educationLevel: "Post-JC / Post-Poly",
         status: "Active",
+        applicationsCount: 5,
         intakeWindows: [INTAKES["INT-PJC-2026"]],
       }),
     ],

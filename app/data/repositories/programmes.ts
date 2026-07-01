@@ -130,6 +130,13 @@ export const ProgrammeSchema = z.object({
   status: z.enum(PROG_STATUSES),
   /** placements — INT, Calculated (total across attached projects). */
   placements: z.number().int().nonnegative().optional(),
+  /**
+   * applications_count — INT, Calculated (total submitted applications for this
+   * programme). No applications↔programme link exists in the model yet, so for
+   * the prototype this is seeded directly; derive it once applications carry a
+   * `programmeId`.
+   */
+  applicationsCount: z.number().int().nonnegative().optional(),
   /** created_by — FK → User. */
   createdBy: z.string().optional(),
   /** created_at — TIMESTAMP, Auto (ISO string). */

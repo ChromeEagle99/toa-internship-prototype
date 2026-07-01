@@ -1,45 +1,28 @@
-import { Plus } from "lucide-react";
 import { isRouteErrorResponse, Link, useRouteError } from "react-router";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Text } from "@/components/ui/text";
 
-import { Shell } from "~/components/shell";
 import { requireCan } from "~/auth/current-user.server";
+import { ROLE_LABELS, can, programmesRepository, resolveUser } from "~/data";
+
 import {
-  ROLE_LABELS,
-  can,
-  programmesRepository,
-  resolveUser,
-  type Programme,
-  type ProgStatus,
-} from "~/data";
+  ProgrammesListView,
+  toProgrammeRows,
+} from "~/features/programmes/views/programmes-list-view";
 
 import type { Route } from "./+types/programmes";
 
 /**
- * Programmes index. Guarded by the same policy at the door and the data layer:
+ * Programmes index. A thin orchestrator: it guards access, loads the programmes
+ * the actor may read, flattens them into list rows, and hands off to a
+ * self-contained view that owns its Shell.
+ *
+ * Access is guarded at the door and the data layer:
  *   1. `requireCan(... "list", "programmes")` gates the route — a role without the
  *      grant (e.g. an Applicant) gets a 403 before any data is read.
  *   2. `programmesRepository.as(actor).list()` returns only the rows the actor may
- *      see. The "New programme" action mirrors the `create` grant.
+ *      see. The "Create Programme" action mirrors the `create` grant.
  */
 
 export function meta() {
@@ -53,116 +36,26 @@ export async function loader({ request }: Route.LoaderArgs) {
     resolveUser(actor.id),
   ]);
 
+  // A single `now` (server date, YYYY-MM-DD) drives the derived Open/Closed
+  // application status, so every row is computed against the same instant.
+  const nowIso = new Date().toISOString().slice(0, 10);
+
   return {
     actor,
     user: {
       name: user?.name ?? ROLE_LABELS[actor.role],
       email: user?.email,
     },
-    programmes: res.ok ? res.data : [],
+    rows: toProgrammeRows(res.ok ? res.data : [], nowIso),
     canCreate: can(actor, "create", "programmes"),
   };
 }
 
-/** Programme status → badge variant. */
-const STATUS_VARIANT: Record<ProgStatus, BadgeProps["variant"]> = {
-  Draft: "subtle",
-  Active: "success",
-  Completed: "info",
-};
-
-/** A readable application window from whichever date model the programme uses. */
-function applicationWindow(programme: Programme): string {
-  if (programme.timeline) return programme.timeline;
-  if (programme.appOpen && programme.appDeadline) {
-    return `${programme.appOpen} → ${programme.appDeadline}`;
-  }
-  if (programme.intakeWindows?.length) {
-    const next = programme.intakeWindows[0]!;
-    return `${next.appOpen} → ${next.appClose}`;
-  }
-  return "—";
-}
-
 export default function Programmes({ loaderData }: Route.ComponentProps) {
-  const { actor, user, programmes, canCreate } = loaderData;
+  const { actor, user, rows, canCreate } = loaderData;
 
   return (
-    <Shell
-      actor={actor}
-      user={user}
-      title="Programmes"
-      workstream="Internship"
-      actions={
-        canCreate ? (
-          <Link
-            to="/programmes/new"
-            className={buttonVariants({ size: "sm", className: "hidden sm:inline-flex" })}
-          >
-            <Plus className="size-4" />
-            New programme
-          </Link>
-        ) : null
-      }
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>All programmes</CardTitle>
-          <CardDescription>
-            Offerings applicants can apply to. You see the programmes your role is
-            permitted to read.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Application window</TableHead>
-                <TableHead className="text-right">Capacity</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {programmes.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <Text size="sm" variant="muted">
-                      No programmes yet. Seed some in the dev database.
-                    </Text>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                programmes.map((programme) => (
-                  <TableRow key={programme.id}>
-                    <TableCell className="font-medium">{programme.title}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[programme.status]}>
-                        {programme.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {programme.category.join(", ")}
-                      </Text>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {applicationWindow(programme)}
-                      </Text>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {programme.capacity ?? "—"}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </Shell>
+    <ProgrammesListView actor={actor} user={user} rows={rows} canCreate={canCreate} />
   );
 }
 
