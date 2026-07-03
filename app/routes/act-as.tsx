@@ -1,4 +1,4 @@
-import { CircleUser, Database, LogOut, PanelsTopLeft } from "lucide-react";
+import { CircleUser, Database, LayoutDashboard, LogOut, PanelsTopLeft } from "lucide-react";
 import { Form, Link, redirect } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +106,7 @@ export default function ActAs({ loaderData }: Route.ComponentProps) {
                     {isCurrent ? <Badge variant="success">current</Badge> : null}
                   </span>
                   <Text size="xs" variant="muted">
-                    {ROLE_LABELS[user.role]} · {user.email}
+                    {user.title ?? ROLE_LABELS[user.role]} · {user.email}
                   </Text>
                 </button>
               </Form>
@@ -117,7 +117,11 @@ export default function ActAs({ loaderData }: Route.ComponentProps) {
         <Separator />
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link to="/playground/programmes" className={buttonVariants({ variant: "solid", size: "sm" })}>
+          <Link to="/dashboard" className={buttonVariants({ variant: "solid", size: "sm" })}>
+            <LayoutDashboard />
+            Go to Dashboard
+          </Link>
+          <Link to="/playground/programmes" className={buttonVariants({ variant: "outline", size: "sm" })}>
             Go to Programmes (guarded)
           </Link>
           <Link
