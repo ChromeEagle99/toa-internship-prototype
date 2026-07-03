@@ -37,56 +37,21 @@ export type RequestStatus = "submitted" | "incomplete" | "pending";
 export interface SubmissionRequest {
   id: string;
   educationLevel: string;
-  /** Who raised the request. */
+  /** Internship Officer who raised the request. */
   requestedBy: string;
   /** Placements the request needs filled. */
   placementsNeeded: number;
   /** Projects already submitted against it. */
   previouslySubmitted: number;
+  /** When the request was sent. YYYY-MM-DD. */
+  sentDate: string;
   /** Submission deadline. YYYY-MM-DD. */
   deadline: string;
   status: RequestStatus;
 }
 
-/** Sample approval queue — one project pending review, mirroring the prototype. */
-export const SAMPLE_APPROVALS: ProjectApproval[] = [
-  {
-    id: "ap-001",
-    project: "Acoustic signal classification with ML",
-    educationLevel: "Junior College",
-    mentor: "Dr Lim Wei Sheng",
-    slots: 1,
-    review: "pending",
-  },
-];
+/** No placeholder approvals — the queue starts empty until a repository exists. */
+export const SAMPLE_APPROVALS: ProjectApproval[] = [];
 
-/** Sample requests overview — two pending, one submitted. */
-export const SAMPLE_REQUESTS: SubmissionRequest[] = [
-  {
-    id: "rq-001",
-    educationLevel: "University",
-    requestedBy: "IO Admin",
-    placementsNeeded: 10,
-    previouslySubmitted: 10,
-    deadline: "2026-04-30",
-    status: "submitted",
-  },
-  {
-    id: "rq-002",
-    educationLevel: "Polytechnic",
-    requestedBy: "IO Admin",
-    placementsNeeded: 8,
-    previouslySubmitted: 5,
-    deadline: "2026-04-30",
-    status: "incomplete",
-  },
-  {
-    id: "rq-003",
-    educationLevel: "Junior College",
-    requestedBy: "IO Admin",
-    placementsNeeded: 6,
-    previouslySubmitted: 0,
-    deadline: "2026-05-30",
-    status: "pending",
-  },
-];
+/** No placeholder requests — the page starts empty until a repository exists. */
+export const SAMPLE_REQUESTS: SubmissionRequest[] = [];
