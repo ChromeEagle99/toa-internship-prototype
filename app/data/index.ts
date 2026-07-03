@@ -80,11 +80,11 @@ export {
   projectRequestsRepository,
   ProjectRequestSchema,
   RequestLineSchema,
-  SEND_MODES,
+  REQUEST_STATUSES,
   exampleProjectRequest,
   type ProjectRequest,
   type RequestLine,
-  type SendMode,
+  type RequestStatus,
 } from "./repositories/project-requests";
 
 export {

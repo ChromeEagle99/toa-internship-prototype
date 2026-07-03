@@ -1,79 +1,69 @@
 import { z } from "zod";
 
+import { EDUCATION_LEVELS } from "../education-levels";
 import { createRepository, newId } from "../repository";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- *  PROJECT REQUEST — the BA's agreed field model (see the data diagram).
+ *  PROJECT REQUEST — modelled from the Request Project UI (source of truth).
  * ─────────────────────────────────────────────────────────────────────────────
- *  IO asks a Programme Centre (PC) for placements. A request fans out into child
- *  "line" rows — one per education level (the diagram's `line_id` is "PK (line)")
- *  — each carrying a requested count and its calculated fulfilment. The output is
- *  rendered as an email; it reconciles against projects via pc + education_level
- *  (soft match, no FK).
+ *  An IO / IO-Admin asks a Programme Centre for internship placements. The form
+ *  ("Request Project", `/project-requests/new`) builds a batch of requests; this
+ *  schema is one request. Each request names its RECIPIENTS (a PC Head, an AD
+ *  (P&C), a response deadline) and one or more PLACEMENT REQUIREMENTS — child
+ *  "line" rows, one per education level, each carrying a requested count.
  *
- *  Naming + optionality conventions are documented in `programmes.ts`.
+ *  Field names mirror the client-side form model in
+ *  `app/components/project-request/model.ts` so the wizard maps onto this schema
+ *  with no renaming: `pcHead`, `adPnc`, `deadline`, and the `lines` rows
+ *  (`educationLevel` + `placements`). The remaining fields are system-set at
+ *  create time and are not collected from the form.
+ *
+ *  A request reconciles against uploaded projects softly (by PC + education
+ *  level); there is no FK from a line to a project.
  *
  *  NOTE (wiring, out of scope here): the resource key "project-requests" has no
  *  entry in `access/permissions.ts`, so it is deny-by-default until a policy
  *  block is added.
  */
 
-/** send_mode — one email per education level, or one combined email. */
-export const SEND_MODES = ["individual", "combined"] as const;
-export type SendMode = (typeof SEND_MODES)[number];
+/** status — lifecycle of a request. System-set; the form only ever creates drafts. */
+export const REQUEST_STATUSES = ["draft", "sent"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 
-/** One requested-placements line — a child row, one per education level. */
+/**
+ * One placement-requirement line — a child row, one per education level.
+ * Mirrors `EducationRow` in the form model (`level` → `educationLevel`).
+ */
 export const RequestLineSchema = z.object({
-  /** line_id — PK (line). */
-  lineId: z.string().optional(),
-  /** education_level — ENUM, Required; value set TBD. */
-  educationLevel: z.string().min(1),
-  /** placements_requested — Required. */
-  placementsRequested: z.number().int().nonnegative(),
-  /** placements_submitted — INT, Calculated. */
-  placementsSubmitted: z.number().int().nonnegative().optional(),
-  /** placements_gap — INT, Calculated (requested − submitted). */
-  placementsGap: z.number().int().optional(),
+  /** line_id — PK (line). Auto-generated per row. */
+  lineId: z.string().min(1),
+  /** education_level — Required; constrained to the shared canonical list. */
+  educationLevel: z.enum(EDUCATION_LEVELS),
+  /** placements — number of placements wanted at this level. Required, ≥ 1. */
+  placements: z.number().int().min(1),
 });
 export type RequestLine = z.infer<typeof RequestLineSchema>;
 
 export const ProjectRequestSchema = z.object({
-  // REQUEST SETUP
-  /** send_mode — ENUM, Required. */
-  sendMode: z.enum(SEND_MODES),
-  /** email_template_id — UUID, Required (FK to an email template). */
-  emailTemplateId: z.string().min(1),
-  /** deadline — DATE (YYYY-MM-DD), Required. */
-  deadline: z.string().min(1),
+  // ── RECIPIENTS (from the form) ──────────────────────────────────────────────
+  /** pc_head — the Programme Centre Head the request is addressed to. Required. */
+  pcHead: z.string().min(1),
+  /** ad_pnc — the Assistant Director (People & Culture) copied. Required. */
+  adPnc: z.string().min(1),
+  /** deadline — response deadline, DATE as YYYY-MM-DD. Required. */
+  deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a YYYY-MM-DD date."),
 
-  // RECIPIENTS
-  /** pc — the Programme Centre addressed. */
-  pc: z.string().min(1),
-  /** head_name — Derived from the PC. */
-  headName: z.string().optional(),
-  /** cc_recipients — UUID[], Optional. */
-  ccRecipients: z.array(z.string()).optional(),
+  // ── PLACEMENT REQUIREMENTS (from the form) ──────────────────────────────────
+  /** lines — one or more requirement rows; at least one is required. */
+  lines: z.array(RequestLineSchema).min(1),
 
-  // REQUESTED PLACEMENTS — repeating child line rows.
-  lines: z.array(RequestLineSchema),
-
-  // SYSTEM FIELDS
+  // ── SYSTEM FIELDS (set at create time, not collected by the form) ───────────
   /** request_id — PK. */
   requestId: z.string().min(1),
-  /** upload_token — VARCHAR, Auto. */
-  uploadToken: z.string().optional(),
-  /** sender_name — VARCHAR, Auto. */
-  senderName: z.string().optional(),
-  /** sent_date — DATE, Auto. */
-  sentDate: z.string().optional(),
-  /** status — ENUM, System-set; value set TBD. */
-  status: z.string().optional(),
-  /** created_count — INT, Calculated. */
-  createdCount: z.number().int().nonnegative().optional(),
-  /** uploaded_count — INT, Calculated. */
-  uploadedCount: z.number().int().nonnegative().optional(),
-  /** requested_by — FK → User. */
+  /** status — ENUM, system-set. New requests start as "draft". */
+  status: z.enum(REQUEST_STATUSES).default("draft"),
+  /** requested_by — FK → User (the signed-in officer). */
   requestedBy: z.string().optional(),
   /** created_at — TIMESTAMP, Auto (ISO string). */
   createdAt: z.string().optional(),
@@ -91,32 +81,15 @@ export function exampleProjectRequest(
   overrides: Partial<ProjectRequest> = {},
 ): ProjectRequest {
   return {
-    sendMode: "individual",
-    emailTemplateId: "ET-001",
+    pcHead: "Tan Wei Ming",
+    adPnc: "Ng Shu Qi",
     deadline: "2026-03-31",
-    pc: "DSO National Laboratories",
-    headName: "Dr Tan Kok",
-    ccRecipients: [],
     lines: [
-      {
-        lineId: newId(),
-        educationLevel: "University (Undergraduate)",
-        placementsRequested: 5,
-        placementsSubmitted: 0,
-        placementsGap: 5,
-      },
-      {
-        lineId: newId(),
-        educationLevel: "Polytechnic",
-        placementsRequested: 3,
-        placementsSubmitted: 0,
-        placementsGap: 3,
-      },
+      { lineId: newId(), educationLevel: "University", placements: 5 },
+      { lineId: newId(), educationLevel: "Polytechnic", placements: 3 },
     ],
     requestId: newId(),
     status: "draft",
-    createdCount: 2,
-    uploadedCount: 0,
     createdAt: "2026-01-10T00:00:00.000Z",
     ...overrides,
   };
