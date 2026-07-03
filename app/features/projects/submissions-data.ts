@@ -1,11 +1,11 @@
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- *  PD P&C submission-review data — PLACEHOLDER.
+ *  AD (P&C) submission-review data — PLACEHOLDER.
  * ─────────────────────────────────────────────────────────────────────────────
  *  The People & Culture surface reviews the middle of the project lifecycle:
  *
  *      ProjectRequest  →  ProjectSubmissionBatch { SubmittedProject[] }  →  ProjectEntry
- *      (IO asks a PC)     (PC uploads, PD P&C reviews) ← here              (live project)
+ *      (IO asks a PC)     (PC uploads, AD (P&C) reviews) ← here              (live project)
  *
  *  Neither submissions nor requests are a data resource yet, so these are typed
  *  sample rows — the same stopgap `routes/project-requests.tsx` uses. Replace with
@@ -13,10 +13,10 @@
  *  views don't change.
  */
 
-/** Where a submitted project sits in PD P&C's review queue. */
+/** Where a submitted project sits in AD (P&C)'s review queue. */
 export type ApprovalReview = "pending" | "approved" | "rejected";
 
-/** A single project a Programme Centre has submitted, awaiting PD P&C review. */
+/** A single project a Programme Centre has submitted, awaiting AD (P&C) review. */
 export interface ProjectApproval {
   id: string;
   /** Project title as submitted. */

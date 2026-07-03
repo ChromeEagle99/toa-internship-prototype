@@ -33,7 +33,7 @@ erDiagram
         string id PK
         string name
         string email "email"
-        enum role "applicant | internship_officer | io_admin | pd_pnc | director"
+        enum role "applicant | internship_officer | io_admin | ad_pnc | director"
     }
     Application {
         string id PK

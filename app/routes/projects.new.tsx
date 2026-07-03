@@ -49,7 +49,7 @@ import type { Route } from "./+types/projects.new";
 /**
  * Create Project — the single-page form for `/projects/new`, as used by IOs and
  * IO Admins (both hold the `create` grant on `projects`). A separate variant for
- * the ADPnC role will follow; this one focuses on the IO/IO-Admin flow.
+ * the AD (P&C) role will follow; this one focuses on the IO/IO-Admin flow.
  *
  * Like `programmes.new`, this is a prototype: the form is fully wired client-side
  * but "Create Project" does not persist yet — it toasts and returns to the list.

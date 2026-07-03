@@ -17,7 +17,7 @@ import { ROLES, type Role } from "~/data";
 export type ProjectRequestsVariant =
   /** Requests an IO has sent to Programme Centres — IO, IO Admin. */
   | "manage"
-  /** Requests a Programme Centre has received to fulfil — PD P&C. */
+  /** Requests a Programme Centre has received to fulfil — AD (P&C). */
   | "received";
 
 /**
@@ -25,7 +25,7 @@ export type ProjectRequestsVariant =
  * turns `null` into a 403.
  */
 export function projectRequestsVariantFor(role: Role): ProjectRequestsVariant | null {
-  if (role === ROLES.pdPnc) return "received";
+  if (role === ROLES.adPnc) return "received";
   if (role === ROLES.internshipOfficer || role === ROLES.ioAdmin) return "manage";
   return null;
 }

@@ -25,7 +25,7 @@ import { ProjectRowForm, SectionLabel } from "../project-row-form";
 import { emptyRow, missingFields, type ProjectRow } from "../upload-data";
 
 /**
- * Upload Projects — the PD P&C (ADPnC) intake surface for submitting a batch of
+ * Upload Projects — the AD (P&C) intake surface for submitting a batch of
  * projects against an intake request. A self-contained page that owns its Shell
  * chrome, like every Projects view.
  *

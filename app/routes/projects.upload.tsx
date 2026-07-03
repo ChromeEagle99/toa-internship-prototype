@@ -9,7 +9,7 @@ import { UploadProjectsView } from "~/features/projects/views/upload-projects-vi
 import type { Route } from "./+types/projects.upload";
 
 /**
- * Upload Projects — thin orchestrator. Guards access to PD P&C, resolves the
+ * Upload Projects — thin orchestrator. Guards access to AD (P&C), resolves the
  * actor's display identity, and hands off to the self-contained
  * {@link UploadProjectsView} that owns its Shell.
  *
@@ -21,15 +21,15 @@ export function meta() {
 }
 
 /**
- * Gate this page to PD P&C (ADPnC) only. Uploading a project batch is their
+ * Gate this page to AD (P&C) only. Uploading a project batch is their
  * remit; everyone else — IO, IO Admin, Director, applicants — gets a 403, even
  * roles that can otherwise create projects. This is a deliberate role allowlist,
  * not a resource grant, so it stays exact as the policy table evolves.
  */
 export async function loader({ request }: Route.LoaderArgs) {
   const actor = await requireActor(request);
-  if (actor.role !== ROLES.pdPnc) {
-    throw new Response("Only PD P&C may upload projects.", {
+  if (actor.role !== ROLES.adPnc) {
+    throw new Response("Only AD (P&C) may upload projects.", {
       status: 403,
       statusText: "Forbidden",
     });
@@ -58,6 +58,6 @@ export default function UploadProjectsRoute({ loaderData }: Route.ComponentProps
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
   return (
-    <AccessDeniedBoundary message="Only PD P&C may upload projects. Switch to the PD P&C role to continue." />
+    <AccessDeniedBoundary message="Only AD (P&C) may upload projects. Switch to the AD (P&C) role to continue." />
   );
 }

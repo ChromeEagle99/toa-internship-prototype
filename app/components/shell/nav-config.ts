@@ -66,7 +66,7 @@ export const NAV: NavSection[] = [
         requires: { action: "list", resource: "programmes" },
       },
       {
-        // The live, approved project list. PD P&C get their own submission-centric
+        // The live, approved project list. AD (P&C) get their own submission-centric
         // surface instead ("My Projects", below), so they're excluded here even
         // though the policy would let them list projects.
         to: "/projects",
@@ -77,21 +77,21 @@ export const NAV: NavSection[] = [
       },
       {
         // Shared button, different faces: IO/IO Admin manage the requests they
-        // send to Programme Centres; PD P&C see the requests their centre has
+        // send to Programme Centres; AD (P&C) see the requests their centre has
         // received to fulfil. The route resolves the variant per role.
         to: "/project-requests",
         label: "Project Requests",
         icon: GitPullRequestArrow,
         badge: 3,
-        roles: [ROLES.internshipOfficer, ROLES.ioAdmin, ROLES.pdPnc],
+        roles: [ROLES.internshipOfficer, ROLES.ioAdmin, ROLES.adPnc],
       },
       {
-        // PD P&C only: the projects their centre has submitted, with IO review
+        // AD (P&C) only: the projects their centre has submitted, with IO review
         // status. Their equivalent of the Projects list above.
         to: "/my-projects",
         label: "My Projects",
         icon: FolderCheck,
-        roles: [ROLES.pdPnc],
+        roles: [ROLES.adPnc],
       },
       {
         to: "/applications",

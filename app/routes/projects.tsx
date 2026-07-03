@@ -27,7 +27,7 @@ import type { Route } from "./+types/projects";
  *   2. Reads go through `projectsRepository.as(actor)`, so only rows the actor may
  *      see are returned.
  *
- * PD P&C don't land here — their submission-centric surfaces are `/my-projects`
+ * AD (P&C) don't land here — their submission-centric surfaces are `/my-projects`
  * and `/project-requests` instead.
  */
 

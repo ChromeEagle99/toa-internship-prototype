@@ -13,10 +13,10 @@ import { ROLES, type Role } from "~/data";
 export type DashboardVariant =
   /** Applications-pipeline summary — IO, IO Admin, Director, applicant. */
   | "default"
-  /** Submission-review summary — PD P&C. */
+  /** Submission-review summary — AD (P&C). */
   | "submissions";
 
 /** Which dashboard this role lands on. Defaults to the pipeline summary. */
 export function dashboardVariantFor(role: Role): DashboardVariant {
-  return role === ROLES.pdPnc ? "submissions" : "default";
+  return role === ROLES.adPnc ? "submissions" : "default";
 }

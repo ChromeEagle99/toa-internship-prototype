@@ -12,7 +12,7 @@ import {
 
 import { requireActor } from "~/auth/current-user.server";
 import { IoDashboardView } from "~/features/dashboard/views/io-dashboard-view";
-import { PdPncDashboardView } from "~/features/dashboard/views/pdpnc-dashboard-view";
+import { AdPncDashboardView } from "~/features/dashboard/views/adpnc-dashboard-view";
 import { dashboardVariantFor } from "~/features/dashboard/view-for";
 import {
   SAMPLE_APPROVALS,
@@ -52,7 +52,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     : [];
 
   if (dashboardVariantFor(actor.role) === "submissions") {
-    // PD P&C: submission-review summary. Counts from placeholder rows until a
+    // AD (P&C): submission-review summary. Counts from placeholder rows until a
     // submissions repository exists (see `features/projects/submissions-data.ts`).
     const requestsSubmitted = SAMPLE_REQUESTS.filter(
       (r) => r.status === "submitted",
@@ -136,7 +136,7 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
 
   if (data.variant === "submissions") {
     return (
-      <PdPncDashboardView
+      <AdPncDashboardView
         actor={actor}
         user={user}
         roleLabel={roleLabel}

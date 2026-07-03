@@ -24,7 +24,7 @@ import type { Actor } from "~/data";
 import type { SubmissionRequest } from "~/features/projects/submissions-data";
 
 /**
- * The PD P&C Project Requests page: the requests their Programme Centre has
+ * The AD (P&C) Project Requests page: the requests their Programme Centre has
  * received from the Internship Office, split into those still awaiting a response
  * and those already fulfilled. Each request is a card the recipient responds to by
  * submitting projects; "View email" reuses the same preview the IO create flow

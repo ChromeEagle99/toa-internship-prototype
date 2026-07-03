@@ -24,13 +24,13 @@ import type {
 } from "~/features/projects/submissions-data";
 
 /**
- * The PD P&C dashboard: a submission-review summary rather than the applications
+ * The AD (P&C) dashboard: a submission-review summary rather than the applications
  * pipeline. Headline figures for the review queue and request fulfilment, with
  * the projects awaiting review surfaced for one-click follow-through. A
  * self-contained page — owns its Shell, like every dashboard view.
  */
 
-export interface PdPncDashboardViewProps {
+export interface AdPncDashboardViewProps {
   actor: Actor;
   user: ShellUser;
   roleLabel: string;
@@ -56,14 +56,14 @@ const REQUEST: Record<RequestStatus, { variant: BadgeProps["variant"]; label: st
   pending: { variant: "subtle", label: "Pending" },
 };
 
-export function PdPncDashboardView({
+export function AdPncDashboardView({
   actor,
   user,
   roleLabel,
   counts,
   approvals,
   requests,
-}: PdPncDashboardViewProps) {
+}: AdPncDashboardViewProps) {
   return (
     <Shell actor={actor} user={user} title="Dashboard" workstream="Internship">
       <div className="space-y-8">

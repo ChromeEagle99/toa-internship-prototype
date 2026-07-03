@@ -8,9 +8,9 @@ import { SAMPLE_APPROVALS } from "~/features/projects/submissions-data";
 import type { Route } from "./+types/my-projects";
 
 /**
- * My Projects — the PD P&C surface for the projects their Programme Centre has
+ * My Projects — the AD (P&C) surface for the projects their Programme Centre has
  * submitted, with the IO's review status for each. A thin orchestrator: it gates
- * access to PD P&C, resolves the actor's identity, and hands off to the
+ * access to AD (P&C), resolves the actor's identity, and hands off to the
  * self-contained {@link MyProjectsView}.
  *
  * Submissions aren't a data resource yet, so the page is role-gated (not policy-
@@ -23,8 +23,8 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const actor = await requireActor(request);
-  if (actor.role !== ROLES.pdPnc) {
-    throw new Response("My Projects is restricted to PD P&C.", {
+  if (actor.role !== ROLES.adPnc) {
+    throw new Response("My Projects is restricted to AD (P&C).", {
       status: 403,
       statusText: "Forbidden",
     });
@@ -49,6 +49,6 @@ export default function MyProjects({ loaderData }: Route.ComponentProps) {
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
   return (
-    <AccessDeniedBoundary message="My Projects is for PD P&C. Switch to the PD P&C role to view the projects your centre has submitted." />
+    <AccessDeniedBoundary message="My Projects is for AD (P&C). Switch to the AD (P&C) role to view the projects your centre has submitted." />
   );
 }

@@ -20,7 +20,7 @@ import type { Actor } from "~/data";
 import type { ApprovalReview, ProjectApproval } from "../submissions-data";
 
 /**
- * The PD P&C "My Projects" page: the projects their Programme Centre has
+ * The AD (P&C) "My Projects" page: the projects their Programme Centre has
  * submitted, with the IO's review status for each. Their equivalent of the live
  * Projects list the other roles see. The "Upload Projects" action adds more to a
  * request. A self-contained page that owns its Shell chrome.
