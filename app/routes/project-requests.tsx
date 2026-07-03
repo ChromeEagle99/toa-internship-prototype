@@ -1,16 +1,20 @@
-import { Plus } from "lucide-react";
-import { isRouteErrorResponse, Link, useRouteError } from "react-router";
-
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { Fragment, useMemo, useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronRight,
+  Columns3,
+  Download,
+  Search,
+  Send,
+} from "lucide-react";
+import { Link } from "react-router";
+
+import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -20,8 +24,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Text } from "@/components/ui/text";
+import { cn } from "@/lib/utils";
 
+import { AccessDeniedBoundary } from "~/components/access-denied";
 import { Shell } from "~/components/shell";
+import {
+  EmailPreviewSheet,
+  type RequestItem,
+} from "~/components/project-request";
 import { requireActor } from "~/auth/current-user.server";
 import { ROLE_LABELS, ROLES, resolveUser, type Role } from "~/data";
 
@@ -29,10 +39,15 @@ import type { Route } from "./+types/project-requests";
 
 /**
  * Project Requests — the first stage of the project lifecycle, where an Internship
- * Officer asks a Programme Centre to submit projects for an intake:
+ * Officer asks Programme Centres to submit projects for an intake:
  *
  *     ProjectRequest  →  ProjectSubmissionBatch { SubmittedProject[] }  →  ProjectEntry
  *     (this page)        (PC uploads, IO/DCE reviews)                      (live projects)
+ *
+ * A queue of requests, one row per PC Head, each expandable to its per-education-
+ * level placement breakdown. The toolbar (search, sortable headers) is client-side
+ * over the rows the loader resolved; "Columns" and "Export" are affordances, not
+ * yet wired. "View Email" opens the same email preview the create flow reviews.
  *
  * Project requests aren't a data resource yet, so the page is ROLE-GATED to match
  * the side-nav: only Internship Officers and IO Admins may see it. The data below
@@ -72,91 +87,80 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 /** The lifecycle stage a request is at. */
-type RequestStatus = "draft" | "sent" | "acknowledged" | "submitted" | "declined";
+type RequestStatus = "pending" | "acknowledged" | "submitted" | "declined";
 
-interface ProjectRequest {
+/** One education-level line within a request. */
+interface PlacementLine {
+  level: string;
+  slots: number;
+}
+
+interface ProjectRequestRow {
   id: string;
-  /** What the IO is asking the Programme Centre for. */
-  title: string;
-  /** The Programme Centre being asked. */
-  pc: string;
-  /** Slots the IO is requesting projects for. */
-  slotsRequested: number;
-  status: RequestStatus;
+  /** PC Head the request is addressed to. */
+  recipientName: string;
+  recipientEmail: string;
+  /** AD (P&C) copied on the request — the email Cc. */
+  adPnc: string;
+  placements: PlacementLine[];
   /** When the request was raised. YYYY-MM-DD. */
-  requestedOn: string;
-  /** When the Programme Centre's submission is due. YYYY-MM-DD. */
-  dueBy: string;
+  requestDate: string;
+  /** When the recipient's response is due. YYYY-MM-DD. */
+  deadline: string;
+  status: RequestStatus;
 }
 
 /** Placeholder rows until a project-requests repository exists. */
-const SAMPLE_REQUESTS: ProjectRequest[] = [
+const SAMPLE_REQUESTS: ProjectRequestRow[] = [
   {
     id: "pr-001",
-    title: "AY26 Q3 intake — ML & signal processing",
-    pc: "DSO National Laboratories",
-    slotsRequested: 6,
-    status: "sent",
-    requestedOn: "2026-06-12",
-    dueBy: "2026-07-10",
+    recipientName: "Aisha Rahman",
+    recipientEmail: "aisha.rahman@dsta.gov.sg",
+    adPnc: "Benjamin Lee",
+    placements: [{ level: "Post Junior College / Post Polytechnic", slots: 1 }],
+    requestDate: "2026-07-03",
+    deadline: "2026-07-28",
+    status: "pending",
   },
   {
     id: "pr-002",
-    title: "AY26 Q3 intake — cyber defence",
-    pc: "Cyber Security Agency",
-    slotsRequested: 4,
-    status: "acknowledged",
-    requestedOn: "2026-06-09",
-    dueBy: "2026-07-07",
+    recipientName: "Priya Nair",
+    recipientEmail: "priya.nair@dsta.gov.sg",
+    adPnc: "Ng Shu Qi",
+    placements: [{ level: "Integrated Programme (IP)", slots: 1 }],
+    requestDate: "2026-07-03",
+    deadline: "2026-08-31",
+    status: "pending",
   },
   {
     id: "pr-003",
-    title: "AY26 Q3 intake — systems engineering",
-    pc: "ST Engineering",
-    slotsRequested: 3,
-    status: "sent",
-    requestedOn: "2026-06-18",
-    dueBy: "2026-07-15",
-  },
-  {
-    id: "pr-004",
-    title: "AY26 Q2 intake — data analytics",
-    pc: "GovTech",
-    slotsRequested: 5,
-    status: "submitted",
-    requestedOn: "2026-04-21",
-    dueBy: "2026-05-19",
-  },
-  {
-    id: "pr-005",
-    title: "AY26 Q2 intake — robotics & autonomy",
-    pc: "DSO National Laboratories",
-    slotsRequested: 2,
-    status: "declined",
-    requestedOn: "2026-04-15",
-    dueBy: "2026-05-13",
+    recipientName: "James Tan",
+    recipientEmail: "james.tan@dsta.gov.sg",
+    adPnc: "Grace Wong",
+    placements: [{ level: "University", slots: 1 }],
+    requestDate: "2026-07-03",
+    deadline: "2026-07-31",
+    status: "pending",
   },
 ];
 
-/** Request status → badge variant. */
-const STATUS_VARIANT: Record<RequestStatus, BadgeProps["variant"]> = {
-  draft: "subtle",
-  sent: "info",
-  acknowledged: "warning",
-  submitted: "success",
-  declined: "danger",
+/** Request status → badge. */
+const STATUS_BADGE: Record<
+  RequestStatus,
+  { variant: BadgeProps["variant"]; label: string }
+> = {
+  pending: { variant: "subtle", label: "Pending" },
+  acknowledged: { variant: "warning", label: "Acknowledged" },
+  submitted: { variant: "success", label: "Submitted" },
+  declined: { variant: "danger", label: "Declined" },
 };
 
-/** Human-readable status label. British English. */
-const STATUS_LABEL: Record<RequestStatus, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  acknowledged: "Acknowledged",
-  submitted: "Submitted",
-  declined: "Declined",
-};
+// ── Derived values ─────────────────────────────────────────────────────────────
 
-/** A readable date, e.g. "10 Jul 2026". */
+const totalPlacements = (row: ProjectRequestRow) =>
+  row.placements.reduce((sum, line) => sum + line.slots, 0);
+
+/** A readable date, e.g. "28 Jul 2026". */
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -165,8 +169,97 @@ function formatDate(iso: string): string {
   });
 }
 
+/** Adapt a list row into the shape the shared email preview expects. */
+function toRequestItem(row: ProjectRequestRow): RequestItem {
+  return {
+    id: row.id,
+    pcHead: row.recipientName,
+    adPnc: row.adPnc,
+    deadline: new Date(row.deadline),
+    rows: row.placements.map((line, index) => ({
+      id: `${row.id}-p${index}`,
+      level: line.level,
+      placements: line.slots,
+    })),
+    collapsed: false,
+    selected: false,
+  };
+}
+
+// ── Sorting ─────────────────────────────────────────────────────────────────────
+
+type SortKey =
+  | "recipient"
+  | "levels"
+  | "placements"
+  | "requestDate"
+  | "deadline"
+  | "status";
+type SortDir = "asc" | "desc";
+
+const SORT_VALUE: Record<SortKey, (row: ProjectRequestRow) => string | number> = {
+  recipient: (r) => r.recipientName.toLowerCase(),
+  levels: (r) => r.placements.length,
+  placements: (r) => totalPlacements(r),
+  requestDate: (r) => r.requestDate,
+  deadline: (r) => r.deadline,
+  status: (r) => r.status,
+};
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function ProjectRequests({ loaderData }: Route.ComponentProps) {
   const { actor, user, requests, canCreate } = loaderData;
+
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const [previewId, setPreviewId] = useState<string | null>(null);
+
+  const sender = { name: user.name, role: `${ROLE_LABELS[actor.role]}, DSTA` };
+
+  const visibleRows = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const filtered = needle
+      ? requests.filter((row) =>
+          [
+            row.recipientName,
+            row.recipientEmail,
+            ...row.placements.map((p) => p.level),
+          ].some((field) => field.toLowerCase().includes(needle)),
+        )
+      : requests;
+
+    if (!sort) return filtered;
+    const read = SORT_VALUE[sort.key];
+    const factor = sort.dir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const av = read(a);
+      const bv = read(b);
+      if (av < bv) return -1 * factor;
+      if (av > bv) return 1 * factor;
+      return 0;
+    });
+  }, [requests, query, sort]);
+
+  const previewRow = requests.find((r) => r.id === previewId) ?? null;
+
+  function toggleSort(key: SortKey) {
+    setSort((current) => {
+      if (current?.key !== key) return { key, dir: "asc" };
+      if (current.dir === "asc") return { key, dir: "desc" };
+      return null; // third click clears the sort
+    });
+  }
+
+  function toggleExpanded(id: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <Shell
@@ -176,96 +269,258 @@ export default function ProjectRequests({ loaderData }: Route.ComponentProps) {
       workstream="Internship"
       actions={
         canCreate ? (
-          <Link
-            to="/project-requests/new"
-            className={buttonVariants({ size: "sm", className: "hidden sm:inline-flex" })}
-          >
-            <Plus className="size-4" />
-            New request
+          <Link to="/project-requests/new" className={buttonVariants({ size: "md" })}>
+            <Send className="size-4" />
+            Create Project Request
           </Link>
         ) : null
       }
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>All requests</CardTitle>
-          <CardDescription>
-            Requests asking a Programme Centre to submit projects for an intake.
-            Track each through to submission before the projects go live.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="p-4 sm:p-6">
+        {/* Toolbar: search + columns on the left, export on the right. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="relative w-full max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+              <Input
+                type="search"
+                aria-label="Search project requests"
+                placeholder="Search by name or programme…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button variant="outline" size="md">
+              <Columns3 className="size-4" />
+              Columns
+            </Button>
+          </div>
+          <Button variant="outline" size="md">
+            <Download className="size-4" />
+            Export
+          </Button>
+        </div>
+
+        {/* Requests table. */}
+        <div className="mt-4 overflow-hidden rounded-md border border-border">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Request</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Programme Centre</TableHead>
-                <TableHead>Due by</TableHead>
-                <TableHead className="text-right">Slots requested</TableHead>
+              <TableRow className="bg-bg-muted/50 hover:bg-bg-muted/50">
+                <SortableHead
+                  label="Recipient"
+                  sortKey="recipient"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <SortableHead
+                  label="Education Levels"
+                  sortKey="levels"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <SortableHead
+                  label="Placements Requested"
+                  sortKey="placements"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <SortableHead
+                  label="Request Date"
+                  sortKey="requestDate"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <SortableHead
+                  label="Deadline"
+                  sortKey="deadline"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <SortableHead
+                  label="Overall Status"
+                  sortKey="status"
+                  sort={sort}
+                  onSort={toggleSort}
+                />
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.length === 0 ? (
+              {visibleRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={7}>
                     <Text size="sm" variant="muted">
-                      No project requests yet. Raise one to ask a Programme Centre
-                      for projects.
+                      {query.trim()
+                        ? "No requests match your search."
+                        : "No project requests yet. Create one to ask a Programme Centre for projects."}
                     </Text>
                   </TableCell>
                 </TableRow>
               ) : (
-                requests.map((req) => (
-                  <TableRow key={req.id}>
-                    <TableCell className="font-medium">{req.title}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[req.status]}>
-                        {STATUS_LABEL[req.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {req.pc}
-                      </Text>
-                    </TableCell>
-                    <TableCell>
-                      <Text size="xs" variant="muted">
-                        {formatDate(req.dueBy)}
-                      </Text>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {req.slotsRequested}
-                    </TableCell>
-                  </TableRow>
-                ))
+                visibleRows.map((row) => {
+                  const badge = STATUS_BADGE[row.status];
+                  const isExpanded = expanded.has(row.id);
+                  return (
+                    <Fragment key={row.id}>
+                      <TableRow>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(row.id)}
+                              aria-expanded={isExpanded}
+                              aria-label={
+                                isExpanded ? "Collapse request" : "Expand request"
+                              }
+                              className="text-fg-muted transition-colors hover:text-fg"
+                            >
+                              <ChevronRight
+                                className={cn(
+                                  "size-4 transition-transform",
+                                  isExpanded && "rotate-90",
+                                )}
+                              />
+                            </button>
+                            <div className="flex flex-col">
+                              <Text size="sm" weight="medium" className="text-fg">
+                                {row.recipientName}
+                              </Text>
+                              <Text size="xs" variant="muted">
+                                {row.recipientEmail}
+                              </Text>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Text size="sm" variant="muted">
+                            {row.placements.length} education level
+                            {row.placements.length === 1 ? "" : "s"}
+                          </Text>
+                        </TableCell>
+                        <TableCell className="tabular-nums text-fg">
+                          {totalPlacements(row)}
+                        </TableCell>
+                        <TableCell className="text-fg">
+                          {formatDate(row.requestDate)}
+                        </TableCell>
+                        <TableCell className="text-fg">
+                          {formatDate(row.deadline)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={badge.variant}>{badge.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewId(row.id)}
+                            className="text-sm font-medium text-accent transition-colors hover:underline"
+                          >
+                            View Email
+                          </button>
+                        </TableCell>
+                      </TableRow>
+
+                      {isExpanded
+                        ? row.placements.map((line, index) => (
+                            <TableRow
+                              key={`${row.id}-p${index}`}
+                              className="bg-bg-subtle/40 hover:bg-bg-subtle/40"
+                            >
+                              <TableCell className="pl-12">
+                                <Text size="sm" weight="medium">
+                                  {line.level}
+                                </Text>
+                              </TableCell>
+                              <TableCell />
+                              <TableCell>
+                                <Text size="sm" variant="muted">
+                                  {line.slots} slot{line.slots === 1 ? "" : "s"}
+                                </Text>
+                              </TableCell>
+                              <TableCell>
+                                <Text size="sm" variant="muted">
+                                  {formatDate(row.requestDate)}
+                                </Text>
+                              </TableCell>
+                              <TableCell>
+                                <Text size="sm" variant="muted">
+                                  {formatDate(row.deadline)}
+                                </Text>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={badge.variant}>{badge.label}</Badge>
+                              </TableCell>
+                              <TableCell />
+                            </TableRow>
+                          ))
+                        : null}
+                    </Fragment>
+                  );
+                })
               )}
             </TableBody>
           </Table>
-        </CardContent>
+        </div>
+
+        {/* Footer count. */}
+        <div className="mt-3 flex justify-end">
+          <Text size="sm" variant="muted">
+            <span className="font-semibold text-fg">{visibleRows.length}</span> of{" "}
+            {requests.length} PC Head{requests.length === 1 ? "" : "s"}
+          </Text>
+        </div>
       </Card>
+
+      <EmailPreviewSheet
+        request={previewRow ? toRequestItem(previewRow) : null}
+        sender={sender}
+        open={previewId !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewId(null);
+        }}
+      />
     </Shell>
+  );
+}
+
+/** A sortable column header: label + a sort-direction affordance. */
+function SortableHead({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: SortDir } | null;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort?.key === sortKey;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn(
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:text-fg",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+          active && "text-fg",
+        )}
+      >
+        {label}
+        <Icon className={cn("size-3.5", active ? "text-accent" : "text-fg-subtle")} />
+      </button>
+    </TableHead>
   );
 }
 
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const is403 = isRouteErrorResponse(error) && error.status === 403;
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6">
-      <Alert variant="danger">
-        <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
-        <AlertDescription>
-          {is403
-            ? "Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer or IO Admin)."
-            : "An unexpected error occurred loading this page."}
-        </AlertDescription>
-      </Alert>
-      <Link to="/act-as" className={buttonVariants({ variant: "solid", size: "sm" })}>
-        Switch identity
-      </Link>
-    </div>
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer or IO Admin)." />
   );
 }
