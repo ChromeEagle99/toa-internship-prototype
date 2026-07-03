@@ -6,7 +6,13 @@ import {
   Search,
   UserCog,
 } from "lucide-react";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Form, Link, NavLink } from "react-router";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -77,8 +83,31 @@ export interface ShellProps {
   nav?: NavSection[];
   /** Actions aligned opposite the page title (e.g. a Create button). */
   actions?: ReactNode;
-  /** Main content. */
+  /**
+   * Main content. A single {@link ShellFooter} (`<Shell.Footer>`) among the
+   * children is lifted out and pinned to the bottom of the viewport as a sticky
+   * action bar; everything else renders in the scrolling content area.
+   */
   children: ReactNode;
+}
+
+/**
+ * Marker for the sticky bottom action bar. Rendered nowhere on its own — the
+ * {@link Shell} finds it among its children and wraps its content in the pinned
+ * footer region, so pages get a consistent bottom bar without re-implementing
+ * the sticky/full-height layout each time.
+ *
+ * @example
+ *   <Shell …>
+ *     …page content…
+ *     <Shell.Footer>
+ *       <span>1 request · 1 slot</span>
+ *       <Button>Review</Button>
+ *     </Shell.Footer>
+ *   </Shell>
+ */
+function ShellFooter({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }
 
 /** Up-to-two-letter initials for the avatar fallback. */
@@ -272,6 +301,14 @@ export function Shell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const sections = visibleNav(actor, nav);
 
+  // Lift a `<Shell.Footer>` out of the children so it can be pinned to the
+  // bottom of the content column; the rest flows in the scrolling area.
+  const childArray = Children.toArray(children);
+  const isFooter = (node: ReactNode) =>
+    isValidElement(node) && node.type === ShellFooter;
+  const footer = childArray.find(isFooter);
+  const content = childArray.filter((node) => !isFooter(node));
+
   return (
     <div className="flex min-h-screen flex-col bg-bg text-fg" style={headerStyle}>
       {/* Full-width sticky header. */}
@@ -334,22 +371,39 @@ export function Shell({
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          {title || actions ? (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              {title ? (
-                <Heading as="h1" size="3xl">
-                  {title}
-                </Heading>
-              ) : (
-                <span />
-              )}
-              {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        <main className="flex min-w-0 flex-1 flex-col">
+          {/* Scrolling content area — grows to fill the column so a short page
+              still pushes the footer to the bottom of the viewport. */}
+          <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            {title || actions ? (
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                {title ? (
+                  <Heading as="h1" size="3xl">
+                    {title}
+                  </Heading>
+                ) : (
+                  <span />
+                )}
+                {actions ? (
+                  <div className="flex items-center gap-2">{actions}</div>
+                ) : null}
+              </div>
+            ) : null}
+            {content}
+          </div>
+
+          {/* Sticky action bar — pinned to the bottom of the content column,
+              staying in view as the content area scrolls. */}
+          {footer ? (
+            <div className="sticky bottom-0 z-30 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+              {footer}
             </div>
           ) : null}
-          {children}
         </main>
       </div>
     </div>
   );
 }
+
+/** Sticky bottom action bar. Place a single `<Shell.Footer>` inside `<Shell>`. */
+Shell.Footer = ShellFooter;
