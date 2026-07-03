@@ -3,6 +3,7 @@ import {
   BookOpen,
   ClipboardList,
   Folder,
+  FolderCheck,
   GitPullRequestArrow,
   GraduationCap,
   LayoutDashboard,
@@ -65,17 +66,32 @@ export const NAV: NavSection[] = [
         requires: { action: "list", resource: "programmes" },
       },
       {
+        // The live, approved project list. PD P&C get their own submission-centric
+        // surface instead ("My Projects", below), so they're excluded here even
+        // though the policy would let them list projects.
         to: "/projects",
         label: "Projects",
         icon: Folder,
         requires: { action: "list", resource: "projects" },
+        roles: [ROLES.internshipOfficer, ROLES.ioAdmin, ROLES.director],
       },
       {
+        // Shared button, different faces: IO/IO Admin manage the requests they
+        // send to Programme Centres; PD P&C see the requests their centre has
+        // received to fulfil. The route resolves the variant per role.
         to: "/project-requests",
         label: "Project Requests",
         icon: GitPullRequestArrow,
         badge: 3,
-        roles: [ROLES.internshipOfficer, ROLES.ioAdmin],
+        roles: [ROLES.internshipOfficer, ROLES.ioAdmin, ROLES.pdPnc],
+      },
+      {
+        // PD P&C only: the projects their centre has submitted, with IO review
+        // status. Their equivalent of the Projects list above.
+        to: "/my-projects",
+        label: "My Projects",
+        icon: FolderCheck,
+        roles: [ROLES.pdPnc],
       },
       {
         to: "/applications",
