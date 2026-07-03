@@ -9,12 +9,8 @@ import type { MonthValue } from "~/components/month-picker";
 
 // ── Option sets ──────────────────────────────────────────────────────────────
 
-export const EDUCATION_LEVELS = [
-  "Junior College",
-  "Polytechnic",
-  "University (Undergraduate)",
-  "University (Postgraduate)",
-] as const;
+// Education levels are a product-wide constant — see `~/data`.
+export { EDUCATION_LEVELS } from "~/data";
 
 export const PROGRAMME_CENTRES = [
   "C4I Development",

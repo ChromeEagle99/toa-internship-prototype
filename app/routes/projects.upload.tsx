@@ -1,8 +1,6 @@
-import { isRouteErrorResponse, Link, useRouteError } from "react-router";
-
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
 import { ToastProvider } from "@/components/ui/toast";
+
+import { AccessDeniedBoundary } from "~/components/access-denied";
 
 import { requireActor } from "~/auth/current-user.server";
 import { ROLE_LABELS, ROLES, resolveUser } from "~/data";
@@ -59,22 +57,7 @@ export default function UploadProjectsRoute({ loaderData }: Route.ComponentProps
 
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const is403 = isRouteErrorResponse(error) && error.status === 403;
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6">
-      <Alert variant="danger">
-        <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
-        <AlertDescription>
-          {is403
-            ? "Only PD P&C may upload projects. Switch to the PD P&C role to continue."
-            : "An unexpected error occurred loading this page."}
-        </AlertDescription>
-      </Alert>
-      <Link to="/act-as" className={buttonVariants({ variant: "solid", size: "sm" })}>
-        Switch identity
-      </Link>
-    </div>
+    <AccessDeniedBoundary message="Only PD P&C may upload projects. Switch to the PD P&C role to continue." />
   );
 }

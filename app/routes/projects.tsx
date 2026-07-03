@@ -1,7 +1,4 @@
-import { isRouteErrorResponse, Link, useRouteError } from "react-router";
-
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
+import { AccessDeniedBoundary } from "~/components/access-denied";
 
 import { requireCan } from "~/auth/current-user.server";
 import {
@@ -110,22 +107,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
 
 /** Renders the 403 from `requireCan` as a clear "access denied" screen. */
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const is403 = isRouteErrorResponse(error) && error.status === 403;
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6">
-      <Alert variant="danger">
-        <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
-        <AlertDescription>
-          {is403
-            ? "Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, Director, or PD P&C)."
-            : "An unexpected error occurred loading this page."}
-        </AlertDescription>
-      </Alert>
-      <Link to="/act-as" className={buttonVariants({ variant: "solid", size: "sm" })}>
-        Switch identity
-      </Link>
-    </div>
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, Director, or PD P&C)." />
   );
 }

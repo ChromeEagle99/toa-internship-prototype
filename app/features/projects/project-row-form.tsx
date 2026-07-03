@@ -18,6 +18,7 @@ import { toast } from "@/components/ui/toast";
 
 import { MonthPicker } from "~/components/month-picker";
 import { MultiSelect } from "~/components/multi-select";
+import { Required } from "~/components/required";
 
 import {
   DISCIPLINES,
@@ -44,11 +45,6 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
       {children}
     </Text>
   );
-}
-
-/** Red asterisk for required-field labels. */
-function Required() {
-  return <span className="text-danger"> *</span>;
 }
 
 /** The AI "Generate" affordance — decorative in the prototype. */

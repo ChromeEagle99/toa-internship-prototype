@@ -1,13 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronsUpDown, Plus, Save, X } from "lucide-react";
-import {
-  isRouteErrorResponse,
-  Link,
-  useNavigate,
-  useRouteError,
-} from "react-router";
+import { Link, useNavigate } from "react-router";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,10 +37,12 @@ import {
   monthOrdinal,
   type MonthValue,
 } from "~/components/month-picker";
+import { AccessDeniedBoundary } from "~/components/access-denied";
 import { MultiSelect } from "~/components/multi-select";
+import { Required } from "~/components/required";
 import { Shell } from "~/components/shell";
 import { requireCan } from "~/auth/current-user.server";
-import { ROLE_LABELS, programmesRepository, resolveUser } from "~/data";
+import { EDUCATION_LEVELS, ROLE_LABELS, programmesRepository, resolveUser } from "~/data";
 
 import type { Route } from "./+types/projects.new";
 
@@ -96,13 +92,6 @@ const PROGRAMME_CENTRES = [
   "Enterprise IT",
   "Guided Systems",
   "Sensors Programme Centre",
-] as const;
-
-const EDUCATION_LEVELS = [
-  "Junior College",
-  "Polytechnic",
-  "University (Undergraduate)",
-  "University (Postgraduate)",
 ] as const;
 
 const TECH_DOMAINS = [
@@ -184,11 +173,6 @@ function FormSection({
       </CardContent>
     </Card>
   );
-}
-
-/** Red asterisk for required-field labels. */
-function Required() {
-  return <span className="text-danger"> *</span>;
 }
 
 /** A labelled PRIZM Select wired to a controlled string value. */
@@ -711,22 +695,7 @@ export default function NewProject({ loaderData }: Route.ComponentProps) {
 
 /** Renders the 403 from `requireCan` as a clear "access denied" screen. */
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const is403 = isRouteErrorResponse(error) && error.status === 403;
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6">
-      <Alert variant="danger">
-        <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
-        <AlertDescription>
-          {is403
-            ? "Your current role isn't permitted to create projects. Switch to a role that can (e.g. Internship Officer or IO Admin)."
-            : "An unexpected error occurred loading this page."}
-        </AlertDescription>
-      </Alert>
-      <Link to="/act-as" className={buttonVariants({ variant: "solid", size: "sm" })}>
-        Switch identity
-      </Link>
-    </div>
+    <AccessDeniedBoundary message="Your current role isn't permitted to create projects. Switch to a role that can (e.g. Internship Officer or IO Admin)." />
   );
 }
