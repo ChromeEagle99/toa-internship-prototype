@@ -13,25 +13,22 @@ import {
   ProjectsListView,
   toProjectRows,
 } from "~/features/projects/views/projects-list-view";
-import { SubmissionsReviewView } from "~/features/projects/views/submissions-review-view";
-import { projectsVariantFor } from "~/features/projects/view-for";
-import { SAMPLE_APPROVALS, SAMPLE_REQUESTS } from "~/features/projects/submissions-data";
 
 import type { Route } from "./+types/projects";
 
 /**
- * Projects — one URL, several faces. This route is a thin orchestrator: it guards
- * access, resolves the actor's {@link projectsVariantFor view variant}, loads only
- * that variant's data, and hands off to a self-contained view that owns its Shell.
+ * Projects — the live, approved project list for IO, IO Admin and Director. A
+ * thin orchestrator: it guards access, loads the projects the actor may see, and
+ * hands off to the self-contained {@link ProjectsListView} that owns its Shell.
  *
  * Access is guarded at the door and the data layer:
  *   1. `requireCan(... "list", "projects")` gates the route — a role without the
  *      grant gets a 403 before any data is read.
- *   2. The list variant reads through `projectsRepository.as(actor)`, so it only
- *      returns rows the actor may see.
+ *   2. Reads go through `projectsRepository.as(actor)`, so only rows the actor may
+ *      see are returned.
  *
- * Adding a role's bespoke Projects page: add a variant in `view-for.tsx`, a branch
- * here, and a view file under `features/projects/views/`. No existing view changes.
+ * PD P&C don't land here — their submission-centric surfaces are `/my-projects`
+ * and `/project-requests` instead.
  */
 
 export function meta() {
@@ -46,20 +43,6 @@ export async function loader({ request }: Route.LoaderArgs) {
     email: dbUser?.email,
   };
 
-  if (projectsVariantFor(actor.role) === "submissions") {
-    // PD P&C: submission-review surface. Placeholder rows until a submissions
-    // repository exists (see `features/projects/submissions-data.ts`).
-    return {
-      actor,
-      user,
-      data: {
-        variant: "submissions" as const,
-        approvals: SAMPLE_APPROVALS,
-        requests: SAMPLE_REQUESTS,
-      },
-    };
-  }
-
   // Resolve each project's programme (via intakeId) so the list can show it.
   // Both reads go through `.as(actor)`, so each only returns rows the actor may
   // see; a denied programmes read just leaves the Programme column blank.
@@ -70,44 +53,25 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     actor,
     user,
-    data: {
-      variant: "list" as const,
-      rows: toProjectRows(
-        projectsRes.ok ? projectsRes.data : [],
-        programmesRes.ok ? programmesRes.data : [],
-      ),
-      canCreate: can(actor, "create", "projects"),
-    },
+    rows: toProjectRows(
+      projectsRes.ok ? projectsRes.data : [],
+      programmesRes.ok ? programmesRes.data : [],
+    ),
+    canCreate: can(actor, "create", "projects"),
   };
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
-  const { actor, user, data } = loaderData;
-
-  if (data.variant === "submissions") {
-    return (
-      <SubmissionsReviewView
-        actor={actor}
-        user={user}
-        approvals={data.approvals}
-        requests={data.requests}
-      />
-    );
-  }
+  const { actor, user, rows, canCreate } = loaderData;
 
   return (
-    <ProjectsListView
-      actor={actor}
-      user={user}
-      rows={data.rows}
-      canCreate={data.canCreate}
-    />
+    <ProjectsListView actor={actor} user={user} rows={rows} canCreate={canCreate} />
   );
 }
 
 /** Renders the 403 from `requireCan` as a clear "access denied" screen. */
 export function ErrorBoundary() {
   return (
-    <AccessDeniedBoundary message="Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, Director, or PD P&C)." />
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Projects. Switch to a role that can (e.g. Internship Officer, IO Admin, or Director)." />
   );
 }

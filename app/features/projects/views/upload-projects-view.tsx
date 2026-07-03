@@ -96,7 +96,7 @@ export function UploadProjectsView({ actor, user }: UploadProjectsViewProps) {
       description: "This is a placeholder — nothing was persisted yet.",
       type: "success",
     });
-    setTimeout(() => navigate("/projects"), 600);
+    setTimeout(() => navigate("/my-projects"), 600);
   }
 
   const activeRowIndex = rows.findIndex((row) => row.id === activeTab);
@@ -125,11 +125,11 @@ export function UploadProjectsView({ actor, user }: UploadProjectsViewProps) {
     >
       <div className="mb-5">
         <Link
-          to="/projects"
+          to="/my-projects"
           className="inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
         >
           <ArrowLeft className="size-4" />
-          Back to Submission Requests
+          Back to My Projects
         </Link>
       </div>
 

@@ -81,7 +81,7 @@ export function PdPncDashboardView({
             icon={ClipboardCheck}
             label="Pending reviews"
             value={counts.pendingReviews}
-            to="/projects"
+            to="/my-projects"
           />
           <StatCard
             icon={FileClock}
@@ -97,7 +97,7 @@ export function PdPncDashboardView({
             icon={Folder}
             label="Projects"
             value={counts.projects}
-            to="/projects"
+            to="/my-projects"
           />
         </div>
 
@@ -107,7 +107,7 @@ export function PdPncDashboardView({
             <CardHeader>
               <CardTitle>Awaiting your review</CardTitle>
               <CardDescription>
-                Submitted projects pending approval. Review them on the Projects page.
+                Submitted projects pending approval. Track them on the My Projects page.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -120,7 +120,7 @@ export function PdPncDashboardView({
                     >
                       <div className="min-w-0">
                         <Link
-                          to="/projects"
+                          to="/my-projects"
                           className="truncate font-medium text-fg outline-none hover:text-accent focus-visible:text-accent"
                         >
                           {approval.project}
