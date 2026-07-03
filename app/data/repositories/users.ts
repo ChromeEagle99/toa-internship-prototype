@@ -25,6 +25,13 @@ export const UserSchema = z.object({
   email: z.string().email(),
   /** The single role this user acts as — validated against the role registry. */
   role: z.enum(ALL_ROLES as unknown as [Role, ...Role[]]),
+  /**
+   * Optional display designation shown in the identity pickers (act-as, logins).
+   * Lets two users of the SAME role read differently — e.g. an "Internship
+   * Applicant" vs a "Scholarship Applicant" (both role `applicant`), or an
+   * "AD (P&C)" (role `ad_pnc`). Falls back to the role's label when unset.
+   */
+  title: z.string().min(1).optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -55,19 +62,24 @@ export async function listUsers(): Promise<User[]> {
 }
 
 /**
- * The demo userbase. Stable ids so the "act as" / login cookie survives reseeds.
- * One applicant per track (the applicant login surfaces these — see
- * `app/auth/demo-identities.ts`), then one back-office user per remaining role.
+ * The demo userbase — the identities the "act as" switcher and the login pickers
+ * offer. Stable ids so the cookie/pickers survive reseeds (change a person's
+ * name/email/role/title freely, but keep their id). `title` is the display
+ * designation shown in the pickers; the two applicants share the `applicant`
+ * role and are told apart by their title. See `app/auth/demo-identities.ts` for
+ * which of these each login screen surfaces.
  */
 export function exampleUsers(): User[] {
   return [
-    { id: "u-applicant-internship", name: "Jenny Aw", email: "jenny.aw@example.sg", role: ROLES.applicant },
-    { id: "u-applicant-scholarship", name: "Marcus Tan", email: "marcus.tan@example.sg", role: ROLES.applicant },
-    { id: "u-applicant-midterm", name: "Priya Kumar", email: "priya.kumar@example.sg", role: ROLES.applicant },
-    { id: "u-io", name: "Jamie Neo", email: "jamie.neo@example.sg", role: ROLES.internshipOfficer },
-    { id: "u-ioadmin", name: "Tara Tan", email: "tara.tan@example.sg", role: ROLES.ioAdmin },
-    { id: "u-pdpnc", name: "Lena Lim", email: "lena.lim@example.sg", role: ROLES.pdPnc },
-    { id: "u-director", name: "Wei Wong", email: "wei.wong@example.sg", role: ROLES.director },
+    // Back office
+    { id: "u-ioadmin", name: "Davina Tan", email: "davina.tan@dsta.gov.sg", role: ROLES.ioAdmin, title: "IO Admin" },
+    { id: "u-io", name: "Rachel Koh", email: "rachel.koh@dsta.gov.sg", role: ROLES.internshipOfficer, title: "Internship Officer" },
+    { id: "u-adpnc", name: "Ng Shu Qi", email: "shuqi.ng@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
+    { id: "u-mentor", name: "Wei Jian Lim", email: "weijian.lim@dsta.gov.sg", role: ROLES.mentor, title: "Mentor" },
+    { id: "u-director", name: "Abbey Chua", email: "abbey.chua@dsta.gov.sg", role: ROLES.director, title: "Director" },
+    // Applicants — both role `applicant`; the title distinguishes the track.
+    { id: "u-applicant-internship", name: "Jenny Aw", email: "jenny.aw@u.nus.edu", role: ROLES.applicant, title: "Internship Applicant" },
+    { id: "u-applicant-scholarship", name: "Marcus Tan", email: "marcus.tan@dsta.gov.sg", role: ROLES.applicant, title: "Scholarship Applicant" },
   ];
 }
 

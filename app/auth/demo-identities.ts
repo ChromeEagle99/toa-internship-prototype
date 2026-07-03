@@ -33,7 +33,6 @@ export interface DemoIdentity {
 export const DEMO_APPLICANT_IDENTITIES: readonly DemoIdentity[] = [
   { id: "u-applicant-internship", tagline: "Internship Applicant" },
   { id: "u-applicant-scholarship", tagline: "Scholarship Applicant" },
-  { id: "u-applicant-midterm", tagline: "Mid-Term Internship Applicant" },
 ];
 
 /**
@@ -58,7 +57,7 @@ export const APPLICANT_LOGIN_ROLES: readonly Role[] = [ROLES.applicant];
 export const DEMO_CORPORATE_IDENTITIES: readonly DemoIdentity[] = [
   { id: "u-ioadmin", tagline: "Senior Internship Officer" },
   { id: "u-io", tagline: "Internship Officer" },
-  { id: "u-pdpnc", tagline: "Personnel & Culture (P&C)" },
+  { id: "u-adpnc", tagline: "Personnel & Culture (P&C)" },
   { id: "u-director", tagline: "Director, DSTA" },
 ];
 
