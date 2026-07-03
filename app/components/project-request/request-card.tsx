@@ -224,7 +224,9 @@ export function RequestCard({
               {/* Column headers — aligned to the recipients grid above so the
                   Education Level select matches the PC Head / AD widths. */}
               <div className="grid gap-5 sm:grid-cols-3">
-                <Label className="text-fg-muted">Education Level</Label>
+                <Label className="text-fg-muted">
+                  Education Level <Required />
+                </Label>
                 <Label className="text-fg-muted">Placements</Label>
               </div>
 

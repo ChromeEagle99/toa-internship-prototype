@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ChevronsDownUp,
@@ -8,7 +8,13 @@ import {
   Send,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import {
+  Link,
+  redirect,
+  useActionData,
+  useNavigation,
+  useSubmit,
+} from "react-router";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,7 +36,15 @@ import {
   type RequestItem,
 } from "~/components/project-request";
 import { requireActor } from "~/auth/current-user.server";
-import { ROLE_LABELS, ROLES, resolveUser, type Role } from "~/data";
+import {
+  ROLE_LABELS,
+  ROLES,
+  newId,
+  projectRequestsRepository,
+  resolveUser,
+  type ProjectRequest,
+  type Role,
+} from "~/data";
 
 import type { Route } from "./+types/project-requests.new";
 
@@ -44,10 +58,10 @@ import type { Route } from "./+types/project-requests.new";
  *
  * A two-step wizard (Build Requests → Review) that batches one or more
  * requests, each addressed to a PC Head and an AD (P&C) with its own response
- * deadline and placement requirements. Like `projects.new`, this is a
- * prototype: the form is fully wired client-side but "Submit" does not persist
- * yet — it toasts and returns to the list. Project requests aren't a policy
- * resource, so the route is ROLE-GATED to mirror the side-nav and list page.
+ * deadline and placement requirements. "Confirm Send" posts to the server
+ * `action`, which maps each request onto the `ProjectRequest` schema and
+ * persists it through `projectRequestsRepository` — the same store the list
+ * page reads. The route is ROLE-GATED to mirror the side-nav and list page.
  *
  * The wizard's building blocks (request card, review step, the client-side
  * model and option sets) live in `~/components/project-request`.
@@ -81,6 +95,66 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
+// ── Submission ────────────────────────────────────────────────────────────────
+
+/**
+ * The serialisable shape the client posts — one entry per request. System
+ * fields (ids, status, timestamps, requester) are set server-side in the action,
+ * not trusted from the client.
+ */
+interface RequestPayload {
+  pcHead: string;
+  adPnc: string;
+  /** YYYY-MM-DD. */
+  deadline: string;
+  lines: { educationLevel: string; placements: number }[];
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const actor = await requireActor(request);
+
+  if (!ALLOWED_ROLES.includes(actor.role)) {
+    throw new Response("Project requests are restricted to Internship Officers.", {
+      status: 403,
+      statusText: "Forbidden",
+    });
+  }
+
+  let payload: RequestPayload[];
+  try {
+    payload = JSON.parse(String((await request.formData()).get("payload") ?? ""));
+  } catch {
+    return { error: "Could not read the submitted requests." };
+  }
+
+  const now = new Date().toISOString();
+
+  // Map each form request onto the ProjectRequest schema and persist it via the
+  // repository. "Confirm Send" marks them as sent. One create per request; the
+  // first failure stops and reports.
+  for (const item of payload) {
+    const record: ProjectRequest = {
+      pcHead: item.pcHead,
+      adPnc: item.adPnc,
+      deadline: item.deadline,
+      lines: item.lines.map((line) => ({
+        lineId: newId(),
+        educationLevel: line.educationLevel as ProjectRequest["lines"][number]["educationLevel"],
+        placements: line.placements,
+      })),
+      requestId: newId(),
+      status: "sent",
+      requestedBy: actor.id,
+      createdAt: now,
+    };
+
+    const res = await projectRequestsRepository.as(actor).create(record);
+    if (!res.ok) return { error: res.error.message };
+  }
+
+  return redirect("/project-requests");
+}
+
 // ── The form ─────────────────────────────────────────────────────────────────
 
 function RequestProjectForm({
@@ -90,7 +164,21 @@ function RequestProjectForm({
   actor: Route.ComponentProps["loaderData"]["actor"];
   user: Route.ComponentProps["loaderData"]["user"];
 }) {
-  const navigate = useNavigate();
+  const submit = useSubmit();
+  const navigation = useNavigation();
+  const actionData = useActionData<typeof action>();
+  const busy = navigation.state !== "idle";
+
+  // Surface a server-side persistence failure as a toast.
+  useEffect(() => {
+    if (actionData?.error) {
+      toast.add({
+        title: "Couldn't submit requests",
+        description: actionData.error,
+        type: "error",
+      });
+    }
+  }, [actionData]);
 
   const [step, setStep] = useState(1);
   const [requests, setRequests] = useState<RequestItem[]>([emptyRequest()]);
@@ -194,25 +282,32 @@ function RequestProjectForm({
   }
 
   function handleSubmit() {
+    // Guard: only send fully-formed requests through to the action.
+    if (!requests.every(isRequestReady)) {
+      setShowErrors(true);
+      toast.add({
+        title: "Incomplete requests",
+        description: "Complete every required field before sending.",
+        type: "error",
+      });
+      return;
+    }
+
     const payload = requests.map((r) => ({
       pcHead: r.pcHead,
       adPnc: r.adPnc,
       deadline: r.deadline?.toISOString().slice(0, 10),
-      placements: r.rows.map((row) => ({
-        level: row.level,
+      lines: r.rows.map((row) => ({
+        educationLevel: row.level,
         placements: row.placements,
       })),
     }));
 
-    // Placeholder: persistence isn't wired up yet — log and return to the list.
-    // eslint-disable-next-line no-console
-    console.log("Submit project requests (placeholder):", payload);
-    toast.add({
-      title: "Requests submitted",
-      description: "This is a placeholder — nothing was persisted yet.",
-      type: "success",
-    });
-    setTimeout(() => navigate("/project-requests"), 600);
+    // Persist through the server action, which maps each request onto the
+    // ProjectRequest schema and writes it via the repository, then redirects.
+    const data = new FormData();
+    data.set("payload", JSON.stringify(payload));
+    submit(data, { method: "post" });
   }
 
   const requestCount = requests.length;
@@ -345,7 +440,7 @@ function RequestProjectForm({
                 <Eye className="size-4" />
               </Button>
             ) : (
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} disabled={busy}>
                 <Send className="size-4" />
                 Confirm Send
               </Button>
