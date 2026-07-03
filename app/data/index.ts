@@ -17,6 +17,9 @@ export {
   isOk,
 } from "./types";
 
+// Domain constants
+export { EDUCATION_LEVELS, type EducationLevel } from "./education-levels";
+
 // Access control
 export { ROLES, ALL_ROLES, ROLE_LABELS, isRole, type Role } from "./access/roles";
 export { type Actor, type MaybeActor, ANONYMOUS, isAuthenticated } from "./access/actor";
