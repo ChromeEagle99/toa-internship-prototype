@@ -33,7 +33,13 @@ import {
   type RequestItem,
 } from "~/components/project-request";
 import { requireActor } from "~/auth/current-user.server";
-import { ROLE_LABELS, resolveUser } from "~/data";
+import {
+  ROLE_LABELS,
+  projectRequestsRepository,
+  resolveUser,
+  type ProjectRequest,
+  type RequestStatus,
+} from "~/data";
 import { projectRequestsVariantFor } from "~/features/project-requests/view-for";
 import { ReceivedRequestsView } from "~/features/project-requests/views/received-requests-view";
 import { SAMPLE_REQUESTS as RECEIVED_REQUESTS } from "~/features/projects/submissions-data";
@@ -54,7 +60,7 @@ import type { Route } from "./+types/project-requests";
  *
  * Project requests aren't a data resource yet, so the page is ROLE-GATED to match
  * the side-nav: Internship Officers and IO Admins manage the requests they send;
- * PD P&C see the requests their centre has received (a separate variant — see
+ * AD (P&C) see the requests their centre has received (a separate variant — see
  * `features/project-requests/view-for`). The data below is placeholder sample
  * content until a `projectRequestsRepository` exists.
  */
@@ -82,17 +88,18 @@ export async function loader({ request }: Route.LoaderArgs) {
     email: dbUser?.email,
   };
 
-  // PD P&C: the requests their centre has received to fulfil.
+  // AD (P&C): the requests their centre has received to fulfil.
   if (variant === "received") {
     return { variant, actor, user, requests: RECEIVED_REQUESTS };
   }
 
-  // IO / IO Admin: the requests they've sent to Programme Centres.
-  return { variant, actor, user, requests: SAMPLE_REQUESTS, canCreate: true };
+  // IO / IO Admin: the requests they've sent to Programme Centres. Read live from
+  // the project-requests repository (seed/clear these rows from the Dev database),
+  // then adapt each entity into the row shape this table renders.
+  const res = await projectRequestsRepository.as(actor).list();
+  const requests = res.ok ? res.data.map(toRow) : [];
+  return { variant, actor, user, requests, canCreate: true };
 }
-
-/** The lifecycle stage a request is at. */
-type RequestStatus = "pending" | "acknowledged" | "submitted" | "declined";
 
 /** One education-level line within a request. */
 interface PlacementLine {
@@ -100,64 +107,48 @@ interface PlacementLine {
   slots: number;
 }
 
+/**
+ * The row shape this table renders — a view-model over the `ProjectRequest`
+ * entity (see `~/data`). The entity is the source of truth; `toRow` below adapts
+ * one into this flattened shape.
+ */
 interface ProjectRequestRow {
   id: string;
   /** PC Head the request is addressed to. */
   recipientName: string;
-  recipientEmail: string;
   /** AD (P&C) copied on the request — the email Cc. */
   adPnc: string;
   placements: PlacementLine[];
-  /** When the request was raised. YYYY-MM-DD. */
+  /** When the request was raised. YYYY-MM-DD, or "" if unknown. */
   requestDate: string;
   /** When the recipient's response is due. YYYY-MM-DD. */
   deadline: string;
   status: RequestStatus;
 }
 
-/** Placeholder rows until a project-requests repository exists. */
-const SAMPLE_REQUESTS: ProjectRequestRow[] = [
-  {
-    id: "pr-001",
-    recipientName: "Aisha Rahman",
-    recipientEmail: "aisha.rahman@dsta.gov.sg",
-    adPnc: "Benjamin Lee",
-    placements: [{ level: "Post Junior College / Post Polytechnic", slots: 1 }],
-    requestDate: "2026-07-03",
-    deadline: "2026-07-28",
-    status: "pending",
-  },
-  {
-    id: "pr-002",
-    recipientName: "Priya Nair",
-    recipientEmail: "priya.nair@dsta.gov.sg",
-    adPnc: "Ng Shu Qi",
-    placements: [{ level: "Integrated Programme (IP)", slots: 1 }],
-    requestDate: "2026-07-03",
-    deadline: "2026-08-31",
-    status: "pending",
-  },
-  {
-    id: "pr-003",
-    recipientName: "James Tan",
-    recipientEmail: "james.tan@dsta.gov.sg",
-    adPnc: "Grace Wong",
-    placements: [{ level: "University", slots: 1 }],
-    requestDate: "2026-07-03",
-    deadline: "2026-07-31",
-    status: "pending",
-  },
-];
+/** Adapt a stored `ProjectRequest` into the row this table renders. */
+function toRow(request: ProjectRequest): ProjectRequestRow {
+  return {
+    id: request.requestId,
+    recipientName: request.pcHead,
+    adPnc: request.adPnc,
+    placements: request.lines.map((line) => ({
+      level: line.educationLevel,
+      slots: line.placements,
+    })),
+    requestDate: request.createdAt ? request.createdAt.slice(0, 10) : "",
+    deadline: request.deadline,
+    status: request.status,
+  };
+}
 
-/** Request status → badge. */
+/** Request status → badge. Mirrors the repository's `REQUEST_STATUSES`. */
 const STATUS_BADGE: Record<
   RequestStatus,
   { variant: BadgeProps["variant"]; label: string }
 > = {
-  pending: { variant: "subtle", label: "Pending" },
-  acknowledged: { variant: "warning", label: "Acknowledged" },
-  submitted: { variant: "success", label: "Submitted" },
-  declined: { variant: "danger", label: "Declined" },
+  draft: { variant: "subtle", label: "Draft" },
+  sent: { variant: "info", label: "Sent" },
 };
 
 // ── Derived values ─────────────────────────────────────────────────────────────
@@ -165,9 +156,12 @@ const STATUS_BADGE: Record<
 const totalPlacements = (row: ProjectRequestRow) =>
   row.placements.reduce((sum, line) => sum + line.slots, 0);
 
-/** A readable date, e.g. "28 Jul 2026". */
+/** A readable date, e.g. "28 Jul 2026", or "—" when absent/unparseable. */
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -214,7 +208,7 @@ const SORT_VALUE: Record<SortKey, (row: ProjectRequestRow) => string | number> =
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProjectRequests({ loaderData }: Route.ComponentProps) {
-  // PD P&C get a distinct "requests received" surface; IO / IO Admin manage the
+  // AD (P&C) get a distinct "requests received" surface; IO / IO Admin manage the
   // requests they've sent (the queue below).
   if (loaderData.variant === "received") {
     return (
@@ -248,7 +242,7 @@ function ManageRequestsPage({
       ? requests.filter((row) =>
           [
             row.recipientName,
-            row.recipientEmail,
+            row.adPnc,
             ...row.placements.map((p) => p.level),
           ].some((field) => field.toLowerCase().includes(needle)),
         )
@@ -411,7 +405,7 @@ function ManageRequestsPage({
                                 {row.recipientName}
                               </Text>
                               <Text size="xs" variant="muted">
-                                {row.recipientEmail}
+                                AD (P&C): {row.adPnc}
                               </Text>
                             </div>
                           </div>
@@ -545,6 +539,6 @@ function SortableHead({
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
   return (
-    <AccessDeniedBoundary message="Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer, IO Admin, or PD P&C)." />
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer, IO Admin, or AD (P&C))." />
   );
 }

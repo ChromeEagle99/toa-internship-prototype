@@ -73,17 +73,20 @@ export const POLICY: Policy = {
     // IOs author and run programmes, and create/manage the live projects under them.
     { resource: "programmes", actions: ["create", "read", "list", "update"] },
     { resource: "projects", actions: ["create", "read", "list", "update"] },
+    // IOs raise project requests to Programme Centres and track the ones they've sent.
+    { resource: "project-requests", actions: ["create", "read", "list", "update"] },
   ],
   [ROLES.ioAdmin]: [
     // IO Admin: everything IOs can do, plus create and delete.
     { resource: "applications", actions: "*" },
     { resource: "programmes", actions: "*" },
     { resource: "projects", actions: "*" },
+    { resource: "project-requests", actions: "*" },
     // Manages who has access. (The auth bootstrap reads users as a system
     // identity; this grant is for an actual user-management screen.)
     { resource: "users", actions: "*" },
   ],
-  [ROLES.pdPnc]: [
+  [ROLES.adPnc]: [
     // People & Culture's surface is the project-submission review: they read and
     // list projects (to approve submissions and track request fulfilment), and
     // nothing else. No applications/programmes grant — so neither the data layer

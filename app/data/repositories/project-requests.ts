@@ -94,3 +94,58 @@ export function exampleProjectRequest(
     ...overrides,
   };
 }
+
+/**
+ * The demo project requests an IO has sent to Programme Centres. Stable
+ * `requestId`s so re-seeding is idempotent (a second seed conflicts rather than
+ * duplicating). Seed and clear these from the Dev database (`/dev/db`).
+ */
+export function exampleProjectRequests(): ProjectRequest[] {
+  return [
+    {
+      requestId: "req-aisha-pjc",
+      pcHead: "Aisha Rahman",
+      adPnc: "Benjamin Lee",
+      deadline: "2026-07-28",
+      lines: [
+        {
+          lineId: "req-aisha-pjc-l1",
+          educationLevel: "Post Junior College / Post Polytechnic",
+          placements: 1,
+        },
+      ],
+      status: "sent",
+      requestedBy: "u-io",
+      createdAt: "2026-07-03T00:00:00.000Z",
+    },
+    {
+      requestId: "req-priya-ip",
+      pcHead: "Priya Nair",
+      adPnc: "Ng Shu Qi",
+      deadline: "2026-08-31",
+      lines: [
+        {
+          lineId: "req-priya-ip-l1",
+          educationLevel: "Integrated Programme (IP)",
+          placements: 1,
+        },
+      ],
+      status: "sent",
+      requestedBy: "u-io",
+      createdAt: "2026-07-03T00:00:00.000Z",
+    },
+    {
+      requestId: "req-james-uni",
+      pcHead: "James Tan",
+      adPnc: "Grace Wong",
+      deadline: "2026-07-31",
+      lines: [
+        { lineId: "req-james-uni-l1", educationLevel: "University", placements: 2 },
+        { lineId: "req-james-uni-l2", educationLevel: "Polytechnic", placements: 1 },
+      ],
+      status: "sent",
+      requestedBy: "u-io",
+      createdAt: "2026-07-03T00:00:00.000Z",
+    },
+  ];
+}
