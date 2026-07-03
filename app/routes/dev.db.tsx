@@ -24,8 +24,12 @@ import {
   draftApplication,
   exampleProgramme,
   exampleProject,
+  exampleProjectRequests,
+  exampleUsers,
   programmesRepository,
+  projectRequestsRepository,
   projectsRepository,
+  usersRepository,
   type Actor,
   type Project,
   type Repository,
@@ -221,6 +225,12 @@ interface CollectionConfig {
   key: string;
   label: string;
   repo: Repository<any>;
+  /**
+   * The record's primary-key field. Row keys and the Delete action target it —
+   * it must match the repository's `identify` (e.g. "projectId", "requestId"),
+   * since not every entity uses a plain "id".
+   */
+  pk: string;
   /** Build the sample rows added by "Seed sample". */
   seed: () => any[];
 }
@@ -230,6 +240,7 @@ const COLLECTIONS: CollectionConfig[] = [
     key: "programmes",
     label: "Programmes",
     repo: programmesRepository,
+    pk: "programmeId",
     // Friendly PKs (PROG-xxxx) and fixed intake ids so the Projects below can
     // attach to them — the Projects list resolves each project's programme via
     // its `intakeId` matching one of these intake windows.
@@ -272,6 +283,7 @@ const COLLECTIONS: CollectionConfig[] = [
     key: "projects",
     label: "Projects",
     repo: projectsRepository,
+    pk: "projectId",
     // A spread across the lifecycle tabs (Pending Review / Project Pool /
     // Allocated), each attached to a programme intake so the Programme column
     // populates. `reviewStatus` drives which tab a row lands in.
@@ -281,6 +293,7 @@ const COLLECTIONS: CollectionConfig[] = [
     key: "applications",
     label: "Applications",
     repo: applicationsRepository,
+    pk: "id",
     seed: () => {
       const stamp = new Date().toISOString();
       return [
@@ -288,6 +301,25 @@ const COLLECTIONS: CollectionConfig[] = [
         draftApplication({ applicantId: "applicant-bob", fullName: "Bob Lim", createdAt: stamp }),
       ];
     },
+  },
+  {
+    key: "project-requests",
+    label: "Project requests",
+    repo: projectRequestsRepository,
+    pk: "requestId",
+    // The requests an IO has sent to Programme Centres — the rows the
+    // /project-requests table renders (mapped from these entities).
+    seed: () => exampleProjectRequests(),
+  },
+  {
+    key: "users",
+    label: "Users",
+    repo: usersRepository,
+    pk: "id",
+    // The identities the "act as" switcher and login pickers offer. NOTE: the
+    // act-as/login loaders auto-seed these if the collection is empty, so a Clear
+    // here is undone on the next visit — Seed/Delete to change the set.
+    seed: () => exampleUsers(),
   },
 ];
 
@@ -530,7 +562,7 @@ export default function DevDatabase({ loaderData, actionData }: Route.ComponentP
                 </TableRow>
               ) : (
                 records.map((record) => (
-                  <TableRow key={String(record.id)}>
+                  <TableRow key={String(record[collection.pk])}>
                     {columns.map((key) => (
                       <TableCell key={key} className="align-top">
                         {renderCell(key, record[key])}
@@ -547,7 +579,7 @@ export default function DevDatabase({ loaderData, actionData }: Route.ComponentP
                         <Form method="post" className="inline">
                           <input type="hidden" name="intent" value="delete" />
                           <input type="hidden" name="collection" value={collection.key} />
-                          <input type="hidden" name="id" value={String(record.id)} />
+                          <input type="hidden" name="id" value={String(record[collection.pk])} />
                           <Button type="submit" variant="ghost" size="sm">
                             <Trash2 />
                             Delete
