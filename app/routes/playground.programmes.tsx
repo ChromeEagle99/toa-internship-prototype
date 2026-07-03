@@ -1,6 +1,5 @@
-import { isRouteErrorResponse, Link, useRouteError } from "react-router";
+import { Link } from "react-router";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -13,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Text } from "@/components/ui/text";
+
+import { AccessDeniedBoundary } from "~/components/access-denied";
 
 import { ROLE_LABELS, can, programmesRepository } from "~/data";
 
@@ -119,22 +120,7 @@ export default function Programmes({ loaderData }: Route.ComponentProps) {
 
 /** Renders the 403 from `requireCan` as a clear "access denied" screen. */
 export function ErrorBoundary() {
-  const error = useRouteError();
-  const is403 = isRouteErrorResponse(error) && error.status === 403;
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-4 px-6">
-      <Alert variant="danger">
-        <AlertTitle>{is403 ? "Access denied" : "Something went wrong"}</AlertTitle>
-        <AlertDescription>
-          {is403
-            ? "Your current role isn't permitted to view Programmes. Switch to a role that can (e.g. Internship Officer, IO Admin, or Director)."
-            : "An unexpected error occurred loading this page."}
-        </AlertDescription>
-      </Alert>
-      <Link to="/act-as" className={buttonVariants({ variant: "solid", size: "sm" })}>
-        Switch identity
-      </Link>
-    </div>
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Programmes. Switch to a role that can (e.g. Internship Officer, IO Admin, or Director)." />
   );
 }
