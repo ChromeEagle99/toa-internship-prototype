@@ -33,7 +33,10 @@ import {
   type RequestItem,
 } from "~/components/project-request";
 import { requireActor } from "~/auth/current-user.server";
-import { ROLE_LABELS, ROLES, resolveUser, type Role } from "~/data";
+import { ROLE_LABELS, resolveUser } from "~/data";
+import { projectRequestsVariantFor } from "~/features/project-requests/view-for";
+import { ReceivedRequestsView } from "~/features/project-requests/views/received-requests-view";
+import { SAMPLE_REQUESTS as RECEIVED_REQUESTS } from "~/features/projects/submissions-data";
 
 import type { Route } from "./+types/project-requests";
 
@@ -50,12 +53,11 @@ import type { Route } from "./+types/project-requests";
  * yet wired. "View Email" opens the same email preview the create flow reviews.
  *
  * Project requests aren't a data resource yet, so the page is ROLE-GATED to match
- * the side-nav: only Internship Officers and IO Admins may see it. The data below
- * is placeholder sample content until a `projectRequestsRepository` exists.
+ * the side-nav: Internship Officers and IO Admins manage the requests they send;
+ * PD P&C see the requests their centre has received (a separate variant — see
+ * `features/project-requests/view-for`). The data below is placeholder sample
+ * content until a `projectRequestsRepository` exists.
  */
-
-/** Roles permitted to manage project requests — mirrors the side-nav gate. */
-const ALLOWED_ROLES: readonly Role[] = [ROLES.internshipOfficer, ROLES.ioAdmin];
 
 export function meta() {
   return [{ title: "Project Requests — Talent Outreach & Acquisition" }];
@@ -64,26 +66,29 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const actor = await requireActor(request);
 
-  // Role gate. Project requests aren't a policy resource, so guard by role here —
-  // the same allowlist the nav uses — and throw the 403 the ErrorBoundary renders.
-  if (!ALLOWED_ROLES.includes(actor.role)) {
-    throw new Response("Project requests are restricted to Internship Officers.", {
+  // Project requests aren't a policy resource, so the variant mapper doubles as
+  // the role gate: no variant → 403 (the same allowlist the side-nav uses).
+  const variant = projectRequestsVariantFor(actor.role);
+  if (!variant) {
+    throw new Response("Project requests are restricted to your role.", {
       status: 403,
       statusText: "Forbidden",
     });
   }
 
-  const user = await resolveUser(actor.id);
-
-  return {
-    actor,
-    user: {
-      name: user?.name ?? ROLE_LABELS[actor.role],
-      email: user?.email,
-    },
-    requests: SAMPLE_REQUESTS,
-    canCreate: true,
+  const dbUser = await resolveUser(actor.id);
+  const user = {
+    name: dbUser?.name ?? ROLE_LABELS[actor.role],
+    email: dbUser?.email,
   };
+
+  // PD P&C: the requests their centre has received to fulfil.
+  if (variant === "received") {
+    return { variant, actor, user, requests: RECEIVED_REQUESTS };
+  }
+
+  // IO / IO Admin: the requests they've sent to Programme Centres.
+  return { variant, actor, user, requests: SAMPLE_REQUESTS, canCreate: true };
 }
 
 /** The lifecycle stage a request is at. */
@@ -209,7 +214,26 @@ const SORT_VALUE: Record<SortKey, (row: ProjectRequestRow) => string | number> =
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProjectRequests({ loaderData }: Route.ComponentProps) {
-  const { actor, user, requests, canCreate } = loaderData;
+  // PD P&C get a distinct "requests received" surface; IO / IO Admin manage the
+  // requests they've sent (the queue below).
+  if (loaderData.variant === "received") {
+    return (
+      <ReceivedRequestsView
+        actor={loaderData.actor}
+        user={loaderData.user}
+        requests={loaderData.requests}
+      />
+    );
+  }
+  return <ManageRequestsPage data={loaderData} />;
+}
+
+function ManageRequestsPage({
+  data,
+}: {
+  data: Extract<Route.ComponentProps["loaderData"], { variant: "manage" }>;
+}) {
+  const { actor, user, requests, canCreate } = data;
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -521,6 +545,6 @@ function SortableHead({
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
 export function ErrorBoundary() {
   return (
-    <AccessDeniedBoundary message="Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer or IO Admin)." />
+    <AccessDeniedBoundary message="Your current role isn't permitted to view Project Requests. Switch to a role that can (Internship Officer, IO Admin, or PD P&C)." />
   );
 }
