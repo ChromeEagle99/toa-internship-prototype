@@ -14,6 +14,7 @@ import { Text } from "@/components/ui/text";
 import { ToastProvider } from "@/components/ui/toast";
 
 import { AccessDeniedBoundary } from "~/components/access-denied";
+import { StepIndicator } from "~/components/multi-step-form";
 import { Shell } from "~/components/shell";
 import { requireCan } from "~/auth/current-user.server";
 import {
@@ -33,7 +34,7 @@ import { DetailsStep } from "~/features/programmes/create/details-step";
 import { EligibilitySheet } from "~/features/programmes/create/eligibility-sheet";
 import { IntakesStep } from "~/features/programmes/create/intakes-step";
 import { ReviewStep } from "~/features/programmes/create/review-step";
-import { StepBar, STEPS } from "~/features/programmes/create/ui";
+import { STEPS } from "~/features/programmes/create/ui";
 import {
   buildPayload,
   emptyIntake,
@@ -101,6 +102,9 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 // ── Wizard ────────────────────────────────────────────────────────────────────
+
+/** Step metadata for the shared indicator, derived from the ordered {@link STEPS}. */
+const STEP_META = STEPS.map((title) => ({ id: title, title }));
 
 function CreateProgrammeWizard({
   actor,
@@ -260,7 +264,7 @@ function CreateProgrammeWizard({
       <div className="space-y-6">
         {/* Step bar */}
         <div className="rounded-lg border border-border bg-surface px-6 py-4">
-          <StepBar current={step} visited={visited} onStepClick={goTo} />
+          <StepIndicator steps={STEP_META} current={step} onStepClick={goTo} />
         </div>
 
         <Card>

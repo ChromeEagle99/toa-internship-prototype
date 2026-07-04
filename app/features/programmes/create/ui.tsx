@@ -1,9 +1,5 @@
-import { Fragment } from "react";
-import { Check } from "lucide-react";
-
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
 
 import type { MonthValue } from "~/components/month-picker";
 import { Required } from "~/components/required";
@@ -72,68 +68,6 @@ export function FieldBlock({
         ) : null}
       </div>
       {children}
-    </div>
-  );
-}
-
-/** The top step bar: numbered nodes joined by connectors, label beside each. */
-export function StepBar({
-  current,
-  visited,
-  onStepClick,
-}: {
-  current: number;
-  visited: number;
-  onStepClick: (index: number) => void;
-}) {
-  return (
-    <div className="flex items-center">
-      {STEPS.map((title, index) => {
-        const isCompleted = index < current;
-        const isCurrent = index === current;
-        const isClickable = index <= visited;
-        const isLast = index === STEPS.length - 1;
-        return (
-          <Fragment key={title}>
-            <button
-              type="button"
-              disabled={!isClickable}
-              onClick={() => isClickable && onStepClick(index)}
-              className={cn(
-                "flex shrink-0 items-center gap-2",
-                isClickable ? "cursor-pointer" : "cursor-default",
-              )}
-            >
-              <span
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                  isCompleted || isCurrent
-                    ? "bg-accent text-accent-fg"
-                    : "border border-border bg-bg text-fg-muted",
-                )}
-              >
-                {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
-              </span>
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  isCurrent ? "text-accent" : isCompleted ? "text-fg" : "text-fg-muted",
-                )}
-              >
-                {title}
-              </span>
-            </button>
-            {!isLast ? (
-              <div
-                className={cn(
-                  "mx-4 h-px flex-1 transition-colors",
-                  index < current ? "bg-accent" : "bg-border",
-                )}
-              />
-            ) : null}
-          </Fragment>
-        );
-      })}
     </div>
   );
 }

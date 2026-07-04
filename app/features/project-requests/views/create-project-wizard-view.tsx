@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
+import { StepIndicator } from "~/components/multi-step-form";
 import { formatMonth, type MonthValue } from "~/components/month-picker";
 import { MonthRangePicker, type MonthRange } from "~/components/month-range-picker";
 import { MultiSelect } from "~/components/multi-select";
@@ -132,6 +133,9 @@ const STEPS = [
   "Mentor Information",
   "Review and Confirm",
 ] as const;
+
+/** Step metadata for the shared indicator, derived from the ordered {@link STEPS}. */
+const STEP_META = STEPS.map((title) => ({ id: title, title }));
 
 const SCOPE_LIMIT = 500;
 const MENTOR_WRITEUP_LIMIT = 300;
@@ -620,48 +624,7 @@ export function CreateProjectWizardView({
       </div>
 
       {/* Stepper */}
-      <ol className="mb-8 flex items-center">
-        {STEPS.map((label, i) => {
-          const active = i === step;
-          const done = i < step;
-          return (
-            <Fragment key={label}>
-              <li className="flex shrink-0 items-center gap-2">
-                <span
-                  className={cn(
-                    "flex size-7 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
-                    active || done
-                      ? "bg-accent text-accent-fg"
-                      : "bg-bg-muted text-fg-subtle",
-                  )}
-                >
-                  {done ? <Check className="size-4" /> : i + 1}
-                </span>
-                <span
-                  className={cn(
-                    "hidden text-sm sm:inline",
-                    active
-                      ? "font-semibold text-accent"
-                      : done
-                        ? "font-medium text-fg"
-                        : "text-fg-muted",
-                  )}
-                >
-                  {label}
-                </span>
-              </li>
-              {i < STEPS.length - 1 ? (
-                <span
-                  className={cn(
-                    "mx-3 h-px flex-1",
-                    i < step ? "bg-accent" : "bg-border",
-                  )}
-                />
-              ) : null}
-            </Fragment>
-          );
-        })}
-      </ol>
+      <StepIndicator steps={STEP_META} current={step} className="mb-8" />
 
       {/* Step content */}
       {step === 0 ? (
