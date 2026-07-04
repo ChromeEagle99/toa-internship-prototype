@@ -88,10 +88,12 @@ export const POLICY: Policy = {
   ],
   [ROLES.adPnc]: [
     // People & Culture's surface is the project-submission review: they read and
-    // list projects (to approve submissions and track request fulfilment), and
-    // nothing else. No applications/programmes grant — so neither the data layer
-    // nor the side-nav surfaces those to them. Widen here if their remit grows.
-    { resource: "projects", actions: ["read", "list"] },
+    // list projects (to approve submissions and track request fulfilment). They
+    // also CREATE projects when responding to a request their centre received —
+    // the "Create individually" wizard at /project-requests/:id/respond. No
+    // applications/programmes grant — so neither the data layer nor the side-nav
+    // surfaces those to them. Widen here if their remit grows.
+    { resource: "projects", actions: ["create", "read", "list"] },
     // They also see the project requests addressed to them. The actor carries no
     // email, so the row-level match (adPncEmail === the signed-in AD's address)
     // can't be expressed here — the grant is resource-wide and the received-

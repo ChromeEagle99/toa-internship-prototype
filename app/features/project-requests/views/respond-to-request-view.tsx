@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Clock, Plus, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Plus,
+  Upload,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import { Heading } from "@/components/ui/heading";
@@ -30,6 +38,13 @@ export interface RespondRequestLine {
   slots: number;
 }
 
+/** One project already submitted against the request, for the summary list. */
+export interface RespondSubmittedProject {
+  title: string;
+  level: string;
+  slots: number;
+}
+
 /** The single request the AD (P&C) is responding to, resolved by the loader. */
 export interface RespondRequest {
   id: string;
@@ -39,8 +54,10 @@ export interface RespondRequest {
   lines: RespondRequestLine[];
   /** Total placements requested across every line. */
   placementsNeeded: number;
-  /** Projects already submitted against it (0 until a submissions repository exists). */
+  /** Placements already submitted against it (summed across matched projects). */
   previouslySubmitted: number;
+  /** The projects already submitted against this request. */
+  submittedProjects: RespondSubmittedProject[];
   /** Response deadline. YYYY-MM-DD. */
   deadline: string;
 }
@@ -215,6 +232,37 @@ export function RespondToRequestView({
           />
         </div>
       </div>
+
+      {/* Projects already submitted against this request. */}
+      {request.submittedProjects.length > 0 ? (
+        <div className="mt-8">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-4 text-success" />
+            <Text size="sm" weight="semibold" className="text-fg">
+              Already submitted ({request.submittedProjects.length})
+            </Text>
+          </div>
+          <div className="mt-3 space-y-2">
+            {request.submittedProjects.map((project, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-surface px-4 py-3"
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FileText className="size-4 shrink-0 text-fg-muted" />
+                  <Text size="sm" weight="medium" className="truncate text-fg">
+                    {project.title}
+                  </Text>
+                </div>
+                <Text size="sm" variant="muted" className="shrink-0">
+                  {project.level} · {project.slots} slot
+                  {project.slots === 1 ? "" : "s"}
+                </Text>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </Shell>
   );
 }

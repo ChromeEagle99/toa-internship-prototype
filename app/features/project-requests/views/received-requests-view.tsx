@@ -53,13 +53,13 @@ export interface ReceivedRequest {
   lines: ReceivedRequestLine[];
   /** Total placements requested across every line. */
   placementsNeeded: number;
-  /** Projects already submitted against it (0 until a submissions repository exists). */
+  /** Placements already submitted against it (summed across matched projects). */
   previouslySubmitted: number;
   /** When the request was sent. YYYY-MM-DD. */
   sentDate: string;
   /** Response deadline. YYYY-MM-DD. */
   deadline: string;
-  /** Whether the centre has fulfilled it. Always false until submissions are tracked. */
+  /** Whether submitted projects meet the requested placement count. */
   submitted: boolean;
 }
 
@@ -133,9 +133,15 @@ function RequestCard({
   onViewEmail: () => void;
 }) {
   const submitted = isSubmitted(request);
+  // Three states: fully fulfilled, partially responded (some placements in), or
+  // untouched. The middle state keeps the request in the "Awaiting" tab but reads
+  // as "In progress" — and its action becomes "Continue response".
+  const inProgress = !submitted && request.previouslySubmitted > 0;
   const status: { variant: BadgeProps["variant"]; label: string } = submitted
     ? { variant: "success", label: "Submitted" }
-    : { variant: "subtle", label: "Awaiting response" };
+    : inProgress
+      ? { variant: "warning", label: "In progress" }
+      : { variant: "subtle", label: "Awaiting response" };
 
   return (
     <Card className="p-5 sm:p-6">
@@ -226,7 +232,7 @@ function RequestCard({
               className: "w-full justify-center lg:w-auto",
             })}
           >
-            Respond
+            {inProgress ? "Continue response" : "Respond"}
             <ArrowRight className="size-4" />
           </Link>
         </div>

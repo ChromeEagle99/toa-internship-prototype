@@ -36,10 +36,12 @@ import { requireActor } from "~/auth/current-user.server";
 import {
   ROLE_LABELS,
   projectRequestsRepository,
+  projectsRepository,
   resolveUser,
+  type Project,
   type ProjectRequest,
-  type RequestStatus,
 } from "~/data";
+import { fulfilmentFor } from "~/features/project-requests/reconcile";
 import { projectRequestsVariantFor } from "~/features/project-requests/view-for";
 import {
   ReceivedRequestsView,
@@ -103,15 +105,25 @@ export async function loader({ request }: Route.LoaderArgs) {
               request.adPncEmail?.toLowerCase() === user.email!.toLowerCase(),
           )
         : [];
-    const requests = await Promise.all(addressed.map(toReceivedRequest));
-    return { variant, actor, user, requests };
+    // The projects this centre has already submitted, so each card can show real
+    // fulfilment progress (soft-matched by the addressed AD + education level).
+    const projectsRes = await projectsRepository.as(actor).list();
+    const projects = projectsRes.ok ? projectsRes.data : [];
+    const requests = addressed.map((request) =>
+      toReceivedRequest(request, projects),
+    );
+    return { variant, actor, user, requests: await Promise.all(requests) };
   }
 
   // IO / IO Admin: the requests they've sent to Programme Centres. Read live from
   // the project-requests repository (seed/clear these rows from the Dev database),
-  // then adapt each entity into the row shape this table renders.
+  // then adapt each entity into the row shape this table renders. Reconcile each
+  // against submitted projects so the status reflects how far the AD (P&C) has
+  // actually responded — "Incomplete" while some but not all placements are in.
   const res = await projectRequestsRepository.as(actor).list();
-  const requests = res.ok ? res.data.map(toRow) : [];
+  const projectsRes = await projectsRepository.as(actor).list();
+  const projects = projectsRes.ok ? projectsRes.data : [];
+  const requests = res.ok ? res.data.map((r) => toRow(r, projects)) : [];
   return { variant, actor, user, requests, canCreate: true };
 }
 
@@ -122,9 +134,35 @@ interface PlacementLine {
 }
 
 /**
+ * The status shown in the manage table's "Overall Status" column. Unlike the
+ * stored `draft | sent` enum, this folds in how far the AD (P&C) has responded: a
+ * sent request reads "Incomplete" once some — but not all — of its placements have
+ * projects against them, and "Complete" once fully fulfilled.
+ */
+type RequestDisplayStatus = "draft" | "sent" | "incomplete" | "complete";
+
+/**
+ * Derive a request's display status from its stored status and how many placements
+ * have been submitted against it (soft-matched by the addressed AD + education
+ * level — see `fulfilmentFor`). Drafts stay drafts; only sent requests carry
+ * fulfilment.
+ */
+function displayStatusFor(
+  request: ProjectRequest,
+  projects: Project[],
+): RequestDisplayStatus {
+  if (request.status === "draft") return "draft";
+  const { placementsSubmitted, fulfilled } = fulfilmentFor(request, projects);
+  if (fulfilled) return "complete";
+  if (placementsSubmitted > 0) return "incomplete";
+  return "sent";
+}
+
+/**
  * The row shape this table renders — a view-model over the `ProjectRequest`
  * entity (see `~/data`). The entity is the source of truth; `toRow` below adapts
- * one into this flattened shape.
+ * one into this flattened shape, reconciling it against submitted projects for
+ * its status.
  */
 interface ProjectRequestRow {
   id: string;
@@ -137,11 +175,11 @@ interface ProjectRequestRow {
   requestDate: string;
   /** When the recipient's response is due. YYYY-MM-DD. */
   deadline: string;
-  status: RequestStatus;
+  status: RequestDisplayStatus;
 }
 
 /** Adapt a stored `ProjectRequest` into the row this table renders. */
-function toRow(request: ProjectRequest): ProjectRequestRow {
+function toRow(request: ProjectRequest, projects: Project[]): ProjectRequestRow {
   return {
     id: request.requestId,
     recipientName: request.pcHead,
@@ -152,7 +190,7 @@ function toRow(request: ProjectRequest): ProjectRequestRow {
     })),
     requestDate: request.createdAt ? request.createdAt.slice(0, 10) : "",
     deadline: request.deadline,
-    status: request.status,
+    status: displayStatusFor(request, projects),
   };
 }
 
@@ -161,10 +199,15 @@ function toRow(request: ProjectRequest): ProjectRequestRow {
  * Resolves the requester's name/email from `requestedBy` (falling back to the
  * email captured on the request), and totals the requested placements.
  */
-async function toReceivedRequest(request: ProjectRequest): Promise<ReceivedRequest> {
+async function toReceivedRequest(
+  request: ProjectRequest,
+  projects: Project[],
+): Promise<ReceivedRequest> {
   const requester = request.requestedBy
     ? await resolveUser(request.requestedBy)
     : null;
+  // Reconcile the request against submitted projects for real progress/status.
+  const fulfilment = fulfilmentFor(request, projects);
   return {
     id: request.requestId,
     requestedBy: requester?.name ?? "Internship Office",
@@ -173,23 +216,27 @@ async function toReceivedRequest(request: ProjectRequest): Promise<ReceivedReque
       level: line.educationLevel,
       slots: line.placements,
     })),
-    placementsNeeded: request.lines.reduce((sum, line) => sum + line.placements, 0),
-    // No submissions repository yet, so nothing is fulfilled: every request is
-    // still awaiting a response.
-    previouslySubmitted: 0,
+    placementsNeeded: fulfilment.placementsNeeded,
+    previouslySubmitted: fulfilment.placementsSubmitted,
     sentDate: request.createdAt ? request.createdAt.slice(0, 10) : "",
     deadline: request.deadline,
-    submitted: false,
+    submitted: fulfilment.fulfilled,
   };
 }
 
-/** Request status → badge. Mirrors the repository's `REQUEST_STATUSES`. */
+/**
+ * Display status → badge. Extends the stored draft/sent with fulfilment-derived
+ * states, so an IO can see at a glance which requests the AD (P&C) has only
+ * partially answered.
+ */
 const STATUS_BADGE: Record<
-  RequestStatus,
+  RequestDisplayStatus,
   { variant: BadgeProps["variant"]; label: string }
 > = {
   draft: { variant: "subtle", label: "Draft" },
   sent: { variant: "info", label: "Sent" },
+  incomplete: { variant: "warning", label: "Incomplete" },
+  complete: { variant: "success", label: "Complete" },
 };
 
 // ── Derived values ─────────────────────────────────────────────────────────────

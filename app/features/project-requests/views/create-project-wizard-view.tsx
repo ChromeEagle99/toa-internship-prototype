@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 import { z } from "zod";
 import {
   ArrowLeft,
@@ -25,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-import { formatMonth } from "~/components/month-picker";
+import { formatMonth, type MonthValue } from "~/components/month-picker";
 import { MonthRangePicker, type MonthRange } from "~/components/month-range-picker";
 import { MultiSelect } from "~/components/multi-select";
 import { Shell, type ShellUser } from "~/components/shell";
@@ -441,6 +442,11 @@ function titleCase(value: string): string {
   return value.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** A {@link MonthValue} as the schema's YYYY-MM string, e.g. `{2027, 10}` → "2027-11". */
+function monthKey(value: MonthValue): string {
+  return `${value.year}-${String(value.month + 1).padStart(2, "0")}`;
+}
+
 export function CreateProjectWizardView({
   actor,
   user,
@@ -448,6 +454,12 @@ export function CreateProjectWizardView({
   onCancel,
 }: CreateProjectWizardViewProps) {
   const [step, setStep] = useState(0);
+
+  // Submission goes through the route's server `action` (a fetcher, so the page
+  // isn't navigated away). `fetcher.data` is scoped to this wizard instance, so a
+  // fresh "Create individually" never sees a stale result.
+  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
+  const submitting = fetcher.state !== "idle";
 
   // Step 1 — Project Details
   const [title, setTitle] = useState("");
@@ -517,6 +529,28 @@ export function CreateProjectWizardView({
   ];
   const canProceed = stepComplete[step];
 
+  // React to the server action's result: a success toast then back to the
+  // "Respond" landing, or a failure toast that keeps the form as-is. Scoped to
+  // this fetcher, so re-entering the wizard never re-fires a stale result.
+  useEffect(() => {
+    if (!fetcher.data) return;
+    if (fetcher.data.ok) {
+      toast.add({
+        title: "Project submitted",
+        description: "Your project has been added and is pending review.",
+        type: "success",
+      });
+      onCancel();
+    } else if (fetcher.data.error) {
+      toast.add({
+        title: "Couldn't submit project",
+        description: fetcher.data.error,
+        type: "error",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data]);
+
   function addSkill() {
     const next = skillDraft.trim();
     if (!next || skills.includes(next)) {
@@ -535,22 +569,35 @@ export function CreateProjectWizardView({
     });
   }
 
+  /** Serialise the form and POST it to the route action, which persists it. */
+  function handleSubmit() {
+    const payload = {
+      projectTitle: title.trim(),
+      projectScope: scope.trim(),
+      pcCode: pc,
+      educationLevel,
+      placement: Number(slots),
+      disciplineOfStudy: disciplines,
+      skills,
+      techDomain,
+      emergingAreas: emergingArea,
+      internshipStart: period.start ? monthKey(period.start) : "",
+      internshipEnd: period.end ? monthKey(period.end) : "",
+      durationMonths: parseInt(duration, 10) || 0,
+      mentorName: mentorName.trim(),
+      mentorEmail: mentorEmail.trim(),
+      mentorDesignation: mentorAppointment.trim(),
+      mentorWriteup: mentorWriteup.trim(),
+    };
+    fetcher.submit(
+      { payload: JSON.stringify(payload) },
+      { method: "post" },
+    );
+  }
+
   function handleNext() {
     if (isLastStep) {
-      if (!declared) {
-        toast.add({
-          title: "Confirm the declaration",
-          description: "Tick the declaration before submitting.",
-          type: "error",
-        });
-        return;
-      }
-      toast.add({
-        title: "Project submitted",
-        description: "This is a placeholder — nothing was persisted yet.",
-        type: "success",
-      });
-      setTimeout(onCancel, 600);
+      handleSubmit();
       return;
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -1008,11 +1055,15 @@ export function CreateProjectWizardView({
               <Save className="size-4" />
               Save Draft
             </Button>
-            <Button type="button" onClick={handleNext} disabled={!canProceed}>
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={!canProceed || submitting}
+            >
               {isLastStep ? (
                 <>
                   <CircleCheck className="size-4" />
-                  Submit Project
+                  {submitting ? "Submitting…" : "Submit Project"}
                 </>
               ) : (
                 <>

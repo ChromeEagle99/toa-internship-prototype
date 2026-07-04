@@ -15,9 +15,41 @@ import {
 import { Text } from "@/components/ui/text";
 
 import { Shell, type ShellUser } from "~/components/shell";
-import type { Actor } from "~/data";
+import type { Actor, Project } from "~/data";
 
 import type { ApprovalReview, ProjectApproval } from "../submissions-data";
+
+/**
+ * Map a project's free-form `reviewStatus` onto the three review states this page
+ * shows. Anything unrecognised (or unset) reads as "pending" so a newly-submitted
+ * project never disappears from the AD's queue.
+ */
+function toReview(status: string | undefined): ApprovalReview {
+  switch ((status ?? "").toLowerCase()) {
+    case "approved":
+      return "approved";
+    case "rejected":
+      return "rejected";
+    default:
+      return "pending";
+  }
+}
+
+/**
+ * Flatten the projects an AD (P&C) has submitted into the {@link ProjectApproval}
+ * rows this table renders. Called in the loader (after it narrows the list to the
+ * signed-in AD's own submissions), so the view stays presentational.
+ */
+export function toApprovalRows(projects: Project[]): ProjectApproval[] {
+  return projects.map((project) => ({
+    id: project.projectId,
+    project: project.projectTitle,
+    educationLevel: project.educationLevel,
+    mentor: project.mentorName,
+    slots: project.placement,
+    review: toReview(project.reviewStatus),
+  }));
+}
 
 /**
  * The AD (P&C) "My Projects" page: the projects their Programme Centre has
