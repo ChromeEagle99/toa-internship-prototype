@@ -33,6 +33,10 @@ export default [
     "playground/month-multi-select",
     "routes/playground.month-multi-select.tsx",
   ),
+  route(
+    "playground/project-requirement-fields",
+    "routes/playground.project-requirement-fields.tsx",
+  ),
   route("playground/gantt", "routes/playground.gantt.tsx"),
   route("dev/db", "routes/dev.db.tsx"),
   route("login/applicant", "routes/login.applicant.tsx"),

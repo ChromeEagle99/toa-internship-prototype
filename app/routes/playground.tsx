@@ -9,6 +9,7 @@ import {
   ListChecks,
   PanelsTopLeft,
   Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -74,6 +75,13 @@ const EXPERIMENTS = [
     title: "Month & multi-select",
     description:
       "Two Logistics-form fields composed from PRIZM primitives where no shipped component fits: a chip-based multi-select with a closed 'N selected' trigger, and a month/year picker with a min constraint for start/end ranges.",
+  },
+  {
+    to: "/playground/project-requirement-fields",
+    icon: SlidersHorizontal,
+    title: "Project requirement fields",
+    description:
+      "The two reusable fields from the Create Project wizard's Project Requirements step: a new whole-month range picker for the internship window, and the multi-select upgraded with checkbox rows and a 'N selected · Clear all' footer.",
   },
   {
     to: "/playground/gantt",

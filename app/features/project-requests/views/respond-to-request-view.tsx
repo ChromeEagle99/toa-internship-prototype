@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft, ArrowRight, Clock, Plus, Upload } from "lucide-react";
 import { Link } from "react-router";
 
@@ -8,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { Shell, type ShellUser } from "~/components/shell";
 import { startOfToday } from "~/components/project-request";
 import type { Actor } from "~/data";
+
+import { CreateProjectWizardView } from "./create-project-wizard-view";
 
 /**
  * Respond to a Project Request — the AD (P&C) chooses HOW to submit projects
@@ -74,30 +77,32 @@ function deadlineRemaining(iso: string): string {
 
 /**
  * A single way to submit, rendered as a large clickable card. The whole card is
- * the link; the trailing "call to action" is an affordance, not a nested control.
+ * the control; the trailing "call to action" is an affordance, not nested. Pass
+ * `to` to navigate (batch upload) or `onClick` to stay in place (create in a
+ * wizard on this page).
  */
 function SubmitOption({
   to,
+  onClick,
   icon,
   title,
   description,
   cta,
 }: {
-  to: string;
+  to?: string;
+  onClick?: () => void;
   icon: React.ReactNode;
   title: string;
   description: string;
   cta: string;
 }) {
-  return (
-    <Link
-      to={to}
-      className={cn(
-        "group flex flex-col gap-3 rounded-lg border border-border bg-surface p-5 sm:p-6",
-        "transition-colors hover:border-accent hover:bg-accent-subtle/30",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-      )}
-    >
+  const className = cn(
+    "group flex flex-col gap-3 rounded-lg border border-border bg-surface p-5 text-left sm:p-6",
+    "transition-colors hover:border-accent hover:bg-accent-subtle/30",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  );
+  const inner = (
+    <>
       <span className="flex size-11 items-center justify-center rounded-lg bg-accent-subtle text-accent">
         {icon}
       </span>
@@ -113,7 +118,17 @@ function SubmitOption({
         {cta}
         <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
       </span>
+    </>
+  );
+
+  return to ? (
+    <Link to={to} className={className}>
+      {inner}
     </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
+      {inner}
+    </button>
   );
 }
 
@@ -122,6 +137,22 @@ export function RespondToRequestView({
   user,
   request,
 }: RespondToRequestViewProps) {
+  // "Create individually" reveals a multi-step wizard in place of this landing,
+  // keeping the AD (P&C) on the request throughout. "Upload by batch" still
+  // navigates away to the shared upload surface.
+  const [creating, setCreating] = useState(false);
+
+  if (creating) {
+    return (
+      <CreateProjectWizardView
+        actor={actor}
+        user={user}
+        requestedLevels={[...new Set(request.lines.map((line) => line.level))]}
+        onCancel={() => setCreating(false)}
+      />
+    );
+  }
+
   const levels = request.lines.map((line) => line.level).join(", ");
   const placementSummary = `${request.placementsNeeded} placement${
     request.placementsNeeded === 1 ? "" : "s"
@@ -176,7 +207,7 @@ export function RespondToRequestView({
             cta="Start upload"
           />
           <SubmitOption
-            to="/projects/new"
+            onClick={() => setCreating(true)}
             icon={<Plus className="size-5" />}
             title="Create individually"
             description="Fill in a guided form, one project at a time. Best for adding just a few projects."

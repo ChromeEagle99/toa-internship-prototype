@@ -95,18 +95,41 @@ export function MultiSelect({
                     onClick={() => toggle(option)}
                     aria-pressed={selected}
                     className={cn(
-                      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-left text-sm text-fg outline-none",
+                      "flex w-full select-none items-center gap-2.5 rounded-sm px-2 py-1.5 text-left text-sm text-fg outline-none",
                       "hover:bg-bg-muted focus-visible:bg-bg-muted",
                     )}
                   >
-                    {selected ? (
-                      <Check className="absolute left-2 size-3.5 text-accent" />
-                    ) : null}
+                    {/* Visual checkbox mirroring the PRIZM Checkbox; the row
+                        button owns interaction, so no nested control. */}
+                    <span
+                      className={cn(
+                        "flex size-4 shrink-0 items-center justify-center rounded-sm border shadow-sm transition-colors",
+                        selected
+                          ? "border-accent bg-accent text-accent-fg"
+                          : "border-border-strong bg-surface",
+                      )}
+                    >
+                      {selected ? <Check className="size-3" /> : null}
+                    </span>
                     {option}
                   </button>
                 );
               })
             )}
+          </div>
+
+          {/* Footer: running count and a one-click clear. */}
+          <div className="flex items-center justify-between border-t border-border px-3 py-2">
+            <span className="text-sm text-fg-muted">{value.length} selected</span>
+            {value.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="text-sm font-medium text-danger transition-colors hover:text-danger/80"
+              >
+                Clear all
+              </button>
+            ) : null}
           </div>
         </PopoverContent>
       </Popover>
@@ -114,7 +137,7 @@ export function MultiSelect({
       {value.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {value.map((item) => (
-            <Badge key={item} variant="subtle" className="gap-1 pr-1">
+            <Badge key={item} variant="info" className="gap-1 pr-1">
               {item}
               <button
                 type="button"

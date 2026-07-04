@@ -1,3 +1,5 @@
+import { ToastProvider } from "@/components/ui/toast";
+
 import { AccessDeniedBoundary } from "~/components/access-denied";
 
 import { requireActor } from "~/auth/current-user.server";
@@ -82,7 +84,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 export default function RespondToRequestRoute({ loaderData }: Route.ComponentProps) {
   const { actor, user, request } = loaderData;
-  return <RespondToRequestView actor={actor} user={user} request={request} />;
+  return (
+    <ToastProvider>
+      <RespondToRequestView actor={actor} user={user} request={request} />
+    </ToastProvider>
+  );
 }
 
 /** Renders the 403 from the role gate as a clear "access denied" screen. */
