@@ -8,6 +8,7 @@ export default [
   route("projects", "routes/projects.tsx"),
   route("projects/new", "routes/projects.new.tsx"),
   route("projects/upload", "routes/projects.upload.tsx"),
+  route("projects/:projectId", "routes/projects.$projectId.tsx"),
   route("my-projects", "routes/my-projects.tsx"),
   route("project-requests", "routes/project-requests.tsx"),
   route("project-requests/new", "routes/project-requests.new.tsx"),

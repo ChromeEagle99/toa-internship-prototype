@@ -8,7 +8,7 @@ import {
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -65,7 +65,7 @@ export type ProjectBucket = (typeof PROJECT_TABS)[number]["key"];
  * `reviewStatus`; anything unrecognised falls into "pending" so nothing is
  * silently dropped from the queue.
  */
-function bucketFor(project: Pick<Project, "reviewStatus">): ProjectBucket {
+export function bucketFor(project: Pick<Project, "reviewStatus">): ProjectBucket {
   switch ((project.reviewStatus ?? "").toLowerCase()) {
     case "draft":
       return "drafts";
@@ -84,7 +84,7 @@ function bucketFor(project: Pick<Project, "reviewStatus">): ProjectBucket {
 
 /** Lifecycle bucket → status badge. Drives the Status column, so it stays in
  * step with the tabs. */
-const BUCKET_BADGE: Record<ProjectBucket, { variant: BadgeProps["variant"]; label: string }> = {
+export const BUCKET_BADGE: Record<ProjectBucket, { variant: BadgeProps["variant"]; label: string }> = {
   drafts: { variant: "subtle", label: "Draft" },
   pending: { variant: "warning", label: "Pending Review" },
   pool: { variant: "info", label: "Project Pool" },
@@ -173,6 +173,7 @@ export interface ProjectsListViewProps {
 }
 
 export function ProjectsListView({ actor, user, rows, canCreate }: ProjectsListViewProps) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<ProjectBucket>("pending");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
@@ -353,15 +354,28 @@ export function ProjectsListView({ actor, user, rows, canCreate }: ProjectsListV
                   const badge = BUCKET_BADGE[row.bucket];
                   const isSelected = selected.has(row.projectId);
                   return (
-                    <TableRow key={row.projectId} data-state={isSelected ? "selected" : undefined}>
-                      <TableCell>
+                    <TableRow
+                      key={row.projectId}
+                      data-state={isSelected ? "selected" : undefined}
+                      onClick={() => navigate(`/projects/${row.projectId}`)}
+                      className="cursor-pointer"
+                    >
+                      <TableCell onClick={(event) => event.stopPropagation()}>
                         <Checkbox
                           aria-label={`Select ${row.projectTitle}`}
                           checked={isSelected}
                           onCheckedChange={(checked) => toggleRow(row.projectId, checked === true)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium text-fg">{row.projectTitle}</TableCell>
+                      <TableCell className="font-medium text-fg">
+                        <Link
+                          to={`/projects/${row.projectId}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded outline-none hover:text-accent hover:underline focus-visible:underline focus-visible:decoration-accent"
+                        >
+                          {row.projectTitle}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         {row.programmeCode ? (
                           <div className="flex flex-col">

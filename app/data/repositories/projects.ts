@@ -71,6 +71,12 @@ export const ProjectSchema = z.object({
   submittedByEmail: z.string().email().optional(),
   /** reviewed_by — FK → User (IO Admin). */
   reviewedBy: z.string().optional(),
+  /**
+   * review_remarks — the reviewer's note, captured when a project is rejected and
+   * sent back to the submitter so they know what to change. Optional: set only on
+   * rejection, cleared on approval.
+   */
+  reviewRemarks: z.string().optional(),
   /** submitted_at — TIMESTAMP, Auto (ISO string). */
   submittedAt: z.string().optional(),
 });

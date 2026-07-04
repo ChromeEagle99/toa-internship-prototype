@@ -38,6 +38,7 @@ import {
   projectRequestsRepository,
   projectsRepository,
   resolveUser,
+  type Actor,
   type Project,
   type ProjectRequest,
 } from "~/data";
@@ -46,6 +47,7 @@ import { projectRequestsVariantFor } from "~/features/project-requests/view-for"
 import {
   ReceivedRequestsView,
   type ReceivedRequest,
+  type RejectedProject,
 } from "~/features/project-requests/views/received-requests-view";
 
 import type { Route } from "./+types/project-requests";
@@ -112,7 +114,15 @@ export async function loader({ request }: Route.LoaderArgs) {
     const requests = addressed.map((request) =>
       toReceivedRequest(request, projects),
     );
-    return { variant, actor, user, requests: await Promise.all(requests) };
+    // Projects this AD submitted that the IO rejected — surfaced back for revision.
+    const rejected = toRejectedProjects(projects, actor, user.email, addressed);
+    return {
+      variant,
+      actor,
+      user,
+      requests: await Promise.all(requests),
+      rejected,
+    };
   }
 
   // IO / IO Admin: the requests they've sent to Programme Centres. Read live from
@@ -192,6 +202,43 @@ function toRow(request: ProjectRequest, projects: Project[]): ProjectRequestRow 
     deadline: request.deadline,
     status: displayStatusFor(request, projects),
   };
+}
+
+/**
+ * The projects this AD (P&C) submitted that the IO rejected, adapted for the
+ * "Needs revision" banner. Matched to the AD by submitter id or captured email
+ * (mirroring how the received requests are addressed). Each links back to the
+ * respond flow of a request asking for its education level, or to batch upload as
+ * a fallback when no such request is in view.
+ */
+function toRejectedProjects(
+  projects: Project[],
+  actor: Actor,
+  email: string | undefined,
+  requests: ProjectRequest[],
+): RejectedProject[] {
+  const mine = projects.filter((project) => {
+    if (project.reviewStatus?.toLowerCase() !== "rejected") return false;
+    if (project.submittedBy === actor.id) return true;
+    return Boolean(
+      email &&
+        project.submittedByEmail?.toLowerCase() === email.toLowerCase(),
+    );
+  });
+
+  return mine.map((project) => {
+    const match = requests.find((request) =>
+      request.lines.some((line) => line.educationLevel === project.educationLevel),
+    );
+    return {
+      id: project.projectId,
+      title: project.projectTitle,
+      remarks: project.reviewRemarks,
+      resubmitTo: match
+        ? `/project-requests/${match.requestId}/respond`
+        : "/projects/upload",
+    };
+  });
 }
 
 /**
@@ -306,6 +353,7 @@ export default function ProjectRequests({ loaderData }: Route.ComponentProps) {
         actor={loaderData.actor}
         user={loaderData.user}
         requests={loaderData.requests}
+        rejected={loaderData.rejected}
       />
     );
   }

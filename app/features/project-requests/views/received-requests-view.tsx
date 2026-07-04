@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, Inbox, Mail } from "lucide-react";
+import { ArrowRight, CheckCircle2, Inbox, Mail, TriangleAlert } from "lucide-react";
 import { Link } from "react-router";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -63,10 +63,27 @@ export interface ReceivedRequest {
   submitted: boolean;
 }
 
+/**
+ * A project this AD (P&C) submitted that the IO rejected — surfaced back to them
+ * for revision. The counterpart to the reviewer's rejection on the project detail
+ * page, carrying the remarks the IO wrote as feedback.
+ */
+export interface RejectedProject {
+  /** project_id. */
+  id: string;
+  title: string;
+  /** The IO's rejection remarks, shown as feedback. Absent on older records. */
+  remarks?: string;
+  /** Where "Edit & resubmit" leads — the respond flow, or upload as a fallback. */
+  resubmitTo: string;
+}
+
 export interface ReceivedRequestsViewProps {
   actor: Actor;
   user: ShellUser;
   requests: ReceivedRequest[];
+  /** Projects the IO sent back for revision. Empty when there are none. */
+  rejected: RejectedProject[];
 }
 
 /** A request is fulfilled once it's been submitted; everything else awaits a response. */
@@ -245,6 +262,7 @@ export function ReceivedRequestsView({
   actor,
   user,
   requests,
+  rejected,
 }: ReceivedRequestsViewProps) {
   const [previewId, setPreviewId] = useState<string | null>(null);
 
@@ -267,6 +285,47 @@ export function ReceivedRequestsView({
             Requests from the Internship Office. Respond to each by submitting projects.
           </Text>
         </div>
+
+        {/* Projects the IO sent back for revision, with their feedback. */}
+        {rejected.length > 0 ? (
+          <Card className="overflow-hidden border-warning/40 p-0">
+            <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-5 py-3">
+              <TriangleAlert className="size-4 text-warning" />
+              <Text size="sm" weight="semibold" className="text-fg">
+                Needs revision ({rejected.length})
+              </Text>
+            </div>
+            <div className="divide-y divide-border">
+              {rejected.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                >
+                  <div className="min-w-0 space-y-0.5">
+                    <Text size="sm" weight="medium" className="text-fg">
+                      {project.title}
+                    </Text>
+                    {project.remarks ? (
+                      <Text size="sm" className="text-warning">
+                        <span className="font-medium">IO feedback:</span> {project.remarks}
+                      </Text>
+                    ) : null}
+                  </div>
+                  <Link
+                    to={project.resubmitTo}
+                    className={buttonVariants({
+                      variant: "outline",
+                      size: "sm",
+                      className: "shrink-0",
+                    })}
+                  >
+                    Edit &amp; resubmit
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : null}
 
         <Tabs defaultValue="awaiting">
           <TabsList>
