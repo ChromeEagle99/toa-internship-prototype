@@ -89,9 +89,16 @@ export function emailSubject(request: RequestItem): string {
   return `[DSTA] Project Request – ${focus}`;
 }
 
-/** The dedicated upload link a recipient uses to submit projects (placeholder). */
+/**
+ * The dedicated link a recipient uses to submit projects against a request.
+ * Built from the running app's origin (so it works on localhost or wherever the
+ * app is served) and pointed at the respond route the flow actually lands on.
+ * Falls back to a bare path during SSR, where there is no `window`.
+ */
 export function uploadLink(request: RequestItem): string {
-  return `https://toaproject.vercel.app/upload/${request.id}`;
+  const path = `/project-requests/${request.id}/respond`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${path}`;
 }
 
 // ── Derived values & formatting ──────────────────────────────────────────────

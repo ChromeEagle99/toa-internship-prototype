@@ -11,6 +11,10 @@ export default [
   route("my-projects", "routes/my-projects.tsx"),
   route("project-requests", "routes/project-requests.tsx"),
   route("project-requests/new", "routes/project-requests.new.tsx"),
+  route(
+    "project-requests/:requestId/respond",
+    "routes/project-requests.$requestId.respond.tsx",
+  ),
   route("components", "routes/components.tsx"),
   route("playground", "routes/playground.tsx"),
   route("playground/multi-step-form", "routes/playground.multi-step-form.tsx"),

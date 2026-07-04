@@ -220,7 +220,7 @@ function RequestCard({
         {/* Respond by submitting projects against the request. */}
         <div className="lg:shrink-0">
           <Link
-            to="/projects/upload"
+            to={`/project-requests/${request.id}/respond`}
             className={buttonVariants({
               size: "md",
               className: "w-full justify-center lg:w-auto",
