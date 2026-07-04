@@ -102,7 +102,15 @@ export async function action({ request }: Route.ActionArgs) {
 
 // ── Wizard ────────────────────────────────────────────────────────────────────
 
-function CreateProgrammeWizard({ projects }: { projects: Project[] }) {
+function CreateProgrammeWizard({
+  actor,
+  user,
+  projects,
+}: {
+  actor: Route.ComponentProps["loaderData"]["actor"];
+  user: Route.ComponentProps["loaderData"]["user"];
+  projects: Project[];
+}) {
   const submit = useSubmit();
   const navigation = useNavigation();
   const actionData = useActionData<typeof action>();
@@ -239,13 +247,23 @@ function CreateProgrammeWizard({ projects }: { projects: Project[] }) {
     .filter((p): p is NonNullable<typeof p> => p !== null);
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* Step bar */}
-      <div className="rounded-lg border border-border bg-surface px-6 py-4">
-        <StepBar current={step} visited={visited} onStepClick={goTo} />
+    <Shell actor={actor} user={user} workstream="Internship">
+      <div className="mb-5">
+        <Text size="sm" variant="muted">
+          <Link to="/programmes" className="transition-colors hover:text-fg">
+            Programmes
+          </Link>{" "}
+          <span className="px-1">›</span> <span className="text-fg">Create Programme</span>
+        </Text>
       </div>
 
-      <Card>
+      <div className="space-y-6">
+        {/* Step bar */}
+        <div className="rounded-lg border border-border bg-surface px-6 py-4">
+          <StepBar current={step} visited={visited} onStepClick={goTo} />
+        </div>
+
+        <Card>
         <CardContent className="p-6">
           {step === 0 ? (
             <DetailsStep
@@ -295,43 +313,45 @@ function CreateProgrammeWizard({ projects }: { projects: Project[] }) {
           {actionData?.error ? (
             <p className="mt-6 text-sm text-danger">{actionData.error}</p>
           ) : null}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Sticky footer */}
-      <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-border bg-bg/95 py-4 backdrop-blur">
-        {step === 0 ? (
-          <Link to="/programmes" className={buttonVariants({ variant: "outline" })}>
-            Cancel
-          </Link>
-        ) : (
-          <Button variant="outline" onClick={goBack} disabled={busy}>
-            <ArrowLeft className="size-4" />
-            Back
-          </Button>
-        )}
-
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => persist("draft")} disabled={busy || !detailsValid}>
-            <Save className="size-4" />
-            Save as Draft
-          </Button>
-          {step < 2 ? (
-            <Button
-              onClick={goNext}
-              disabled={(step === 0 && !detailsValid) || (step === 1 && !intakesValid)}
-            >
-              Next: {STEPS[step + 1]}
-              <ArrowRight className="size-4" />
-            </Button>
+      <Shell.Footer>
+        <div className="flex items-center justify-between gap-3">
+          {step === 0 ? (
+            <Link to="/programmes" className={buttonVariants({ variant: "outline" })}>
+              Cancel
+            </Link>
           ) : (
-            <Button onClick={() => persist("create")} disabled={busy || !detailsValid || !intakesValid}>
-              <CircleCheck className="size-4" />
-              Create Programme
+            <Button variant="outline" onClick={goBack} disabled={busy}>
+              <ArrowLeft className="size-4" />
+              Back
             </Button>
           )}
+
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => persist("draft")} disabled={busy || !detailsValid}>
+              <Save className="size-4" />
+              Save as Draft
+            </Button>
+            {step < 2 ? (
+              <Button
+                onClick={goNext}
+                disabled={(step === 0 && !detailsValid) || (step === 1 && !intakesValid)}
+              >
+                Next: {STEPS[step + 1]}
+                <ArrowRight className="size-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => persist("create")} disabled={busy || !detailsValid || !intakesValid}>
+                <CircleCheck className="size-4" />
+                Create Programme
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      </Shell.Footer>
 
       <EligibilitySheet
         open={sheetOpen}
@@ -339,7 +359,7 @@ function CreateProgrammeWizard({ projects }: { projects: Project[] }) {
         educationLevel={state.educationLevel}
         criteria={state.eligibilityCriteria}
       />
-    </div>
+    </Shell>
   );
 }
 
@@ -348,17 +368,7 @@ export default function NewProgramme({ loaderData }: Route.ComponentProps) {
 
   return (
     <ToastProvider>
-      <Shell actor={actor} user={user} workstream="Internship">
-        <div className="mb-5">
-          <Text size="sm" variant="muted">
-            <Link to="/programmes" className="transition-colors hover:text-fg">
-              Programmes
-            </Link>{" "}
-            <span className="px-1">›</span> <span className="text-fg">Create Programme</span>
-          </Text>
-        </div>
-        <CreateProgrammeWizard projects={projects} />
-      </Shell>
+      <CreateProgrammeWizard actor={actor} user={user} projects={projects} />
     </ToastProvider>
   );
 }
