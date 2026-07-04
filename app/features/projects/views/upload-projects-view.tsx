@@ -136,18 +136,6 @@ export function UploadProjectsView({ actor, user }: UploadProjectsViewProps) {
       {!inForm ? (
         <Card>
           <CardContent className="space-y-6 p-6">
-            {/* Intent banner */}
-            <div className="rounded-lg border border-accent/30 bg-accent-subtle/50 p-4">
-              <Text size="sm" weight="semibold" className="text-accent">
-                Submit by Education Level
-              </Text>
-              <Text size="sm" variant="muted" className="mt-1">
-                Set the <span className="font-medium text-fg">Education Level</span> for
-                each project row. Projects are no longer tied to a programme at submission —
-                the IO attaches approved projects to a programme when they create one.
-              </Text>
-            </div>
-
             {/* Step 1 — template */}
             <div className="flex flex-col gap-3 rounded-lg bg-bg-subtle p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
