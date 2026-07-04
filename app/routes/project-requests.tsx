@@ -173,7 +173,9 @@ function toRequestItem(row: ProjectRequestRow): RequestItem {
   return {
     id: row.id,
     pcHead: row.recipientName,
+    pcHeadEmail: null,
     adPnc: row.adPnc,
+    adPncEmail: null,
     deadline: new Date(row.deadline),
     rows: row.placements.map((line, index) => ({
       id: `${row.id}-p${index}`,

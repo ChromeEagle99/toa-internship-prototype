@@ -39,6 +39,7 @@ import { requireActor } from "~/auth/current-user.server";
 import {
   ROLE_LABELS,
   ROLES,
+  listUsersByRole,
   newId,
   projectRequestsRepository,
   resolveUser,
@@ -86,12 +87,26 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const user = await resolveUser(actor.id);
 
+  // Recipient pickers are sourced from the users directory: everyone holding the
+  // PC Head / AD (P&C) role. Selecting one captures its email (a hidden field),
+  // so the request stores both the name and the address it was sent to.
+  const [pcHeads, adPncs] = await Promise.all([
+    listUsersByRole(ROLES.pcHead),
+    listUsersByRole(ROLES.adPnc),
+  ]);
+  const toContact = (u: { name: string; email: string }) => ({
+    name: u.name,
+    email: u.email,
+  });
+
   return {
     actor,
     user: {
       name: user?.name ?? ROLE_LABELS[actor.role],
       email: user?.email,
     },
+    pcHeadOptions: pcHeads.map(toContact),
+    adPncOptions: adPncs.map(toContact),
   };
 }
 
@@ -104,7 +119,11 @@ export async function loader({ request }: Route.LoaderArgs) {
  */
 interface RequestPayload {
   pcHead: string;
+  /** The PC Head's email — a hidden field captured from the directory pick. */
+  pcHeadEmail: string;
   adPnc: string;
+  /** The AD (P&C)'s email — a hidden field captured from the directory pick. */
+  adPncEmail: string;
   /** YYYY-MM-DD. */
   deadline: string;
   lines: { educationLevel: string; placements: number }[];
@@ -135,7 +154,9 @@ export async function action({ request }: Route.ActionArgs) {
   for (const item of payload) {
     const record: ProjectRequest = {
       pcHead: item.pcHead,
+      pcHeadEmail: item.pcHeadEmail || undefined,
       adPnc: item.adPnc,
+      adPncEmail: item.adPncEmail || undefined,
       deadline: item.deadline,
       lines: item.lines.map((line) => ({
         lineId: newId(),
@@ -160,9 +181,13 @@ export async function action({ request }: Route.ActionArgs) {
 function RequestProjectForm({
   actor,
   user,
+  pcHeadOptions,
+  adPncOptions,
 }: {
   actor: Route.ComponentProps["loaderData"]["actor"];
   user: Route.ComponentProps["loaderData"]["user"];
+  pcHeadOptions: Route.ComponentProps["loaderData"]["pcHeadOptions"];
+  adPncOptions: Route.ComponentProps["loaderData"]["adPncOptions"];
 }) {
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -295,7 +320,9 @@ function RequestProjectForm({
 
     const payload = requests.map((r) => ({
       pcHead: r.pcHead,
+      pcHeadEmail: r.pcHeadEmail ?? "",
       adPnc: r.adPnc,
+      adPncEmail: r.adPncEmail ?? "",
       deadline: r.deadline?.toISOString().slice(0, 10),
       lines: r.rows.map((row) => ({
         educationLevel: row.level,
@@ -389,6 +416,8 @@ function RequestProjectForm({
                   request={request}
                   index={index}
                   showErrors={showErrors}
+                  pcHeadOptions={pcHeadOptions}
+                  adPncOptions={adPncOptions}
                   onToggleCollapse={() =>
                     updateRequest(request.id, { collapsed: !request.collapsed })
                   }
@@ -396,8 +425,12 @@ function RequestProjectForm({
                     updateRequest(request.id, { selected })
                   }
                   onRemove={() => removeRequest(request.id)}
-                  onPcHeadChange={(v) => updateRequest(request.id, { pcHead: v })}
-                  onAdPncChange={(v) => updateRequest(request.id, { adPnc: v })}
+                  onPcHeadChange={(name, email) =>
+                    updateRequest(request.id, { pcHead: name, pcHeadEmail: email })
+                  }
+                  onAdPncChange={(name, email) =>
+                    updateRequest(request.id, { adPnc: name, adPncEmail: email })
+                  }
                   onDeadlineChange={(deadline) =>
                     updateRequest(request.id, { deadline })
                   }
@@ -453,11 +486,16 @@ function RequestProjectForm({
 }
 
 export default function NewProjectRequest({ loaderData }: Route.ComponentProps) {
-  const { actor, user } = loaderData;
+  const { actor, user, pcHeadOptions, adPncOptions } = loaderData;
 
   return (
     <ToastProvider>
-      <RequestProjectForm actor={actor} user={user} />
+      <RequestProjectForm
+        actor={actor}
+        user={user}
+        pcHeadOptions={pcHeadOptions}
+        adPncOptions={adPncOptions}
+      />
     </ToastProvider>
   );
 }

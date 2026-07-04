@@ -95,5 +95,6 @@ export {
   ensureUsersSeeded,
   resolveUser,
   listUsers,
+  listUsersByRole,
   type User,
 } from "./repositories/users";

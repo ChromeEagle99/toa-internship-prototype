@@ -17,10 +17,9 @@ import { Required } from "~/components/required";
 
 import { DeadlinePicker, SectionLabel } from "./fields";
 import {
-  AD_PNC,
   EDUCATION_LEVELS,
-  PC_HEADS,
   requestSummary,
+  type Contact,
   type EducationRow,
   type RequestItem,
 } from "./model";
@@ -63,6 +62,8 @@ export function RequestCard({
   request,
   index,
   showErrors,
+  pcHeadOptions,
+  adPncOptions,
   onToggleCollapse,
   onToggleSelect,
   onRemove,
@@ -76,17 +77,27 @@ export function RequestCard({
   request: RequestItem;
   index: number;
   showErrors: boolean;
+  /** PC Heads a request can be addressed to — from the users directory. */
+  pcHeadOptions: Contact[];
+  /** AD (P&C)s a request can copy — from the users directory. */
+  adPncOptions: Contact[];
   onToggleCollapse: () => void;
   onToggleSelect: (selected: boolean) => void;
   onRemove: () => void;
-  onPcHeadChange: (value: string) => void;
-  onAdPncChange: (value: string) => void;
+  /** Report the picked PC Head — its name (shown) and email (hidden field). */
+  onPcHeadChange: (name: string, email: string) => void;
+  /** Report the picked AD (P&C) — its name (shown) and email (hidden field). */
+  onAdPncChange: (name: string, email: string) => void;
   onDeadlineChange: (date: Date | undefined) => void;
   onRowChange: (rowId: string, patch: Partial<EducationRow>) => void;
   onAddRow: () => void;
   onRemoveRow: (rowId: string) => void;
 }) {
   const summary = requestSummary(request);
+
+  /** Look up a picked name's email in the directory (empty if not found). */
+  const emailFor = (options: Contact[], name: string) =>
+    options.find((option) => option.name === name)?.email ?? "";
 
   return (
     <div className={cn(request.selected && "bg-bg-subtle")}>
@@ -153,19 +164,28 @@ export function RequestCard({
                 </Label>
                 <Select
                   value={request.pcHead ?? ""}
-                  onValueChange={(v) => onPcHeadChange((v as string) ?? "")}
+                  onValueChange={(v) => {
+                    const name = (v as string) ?? "";
+                    onPcHeadChange(name, emailFor(pcHeadOptions, name));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select PC Head" />
                   </SelectTrigger>
                   <SelectContent>
-                    {PC_HEADS.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {pcHeadOptions.map((option) => (
+                      <SelectItem key={option.name} value={option.name}>
+                        {option.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Hidden field — the PC Head's email, populated on select. */}
+                <input
+                  type="hidden"
+                  name={`pcHeadEmail-${request.id}`}
+                  value={request.pcHeadEmail ?? ""}
+                />
                 {showErrors && !request.pcHead ? (
                   <Text size="xs" className="text-danger">
                     Select a PC Head.
@@ -179,19 +199,28 @@ export function RequestCard({
                 </Label>
                 <Select
                   value={request.adPnc ?? ""}
-                  onValueChange={(v) => onAdPncChange((v as string) ?? "")}
+                  onValueChange={(v) => {
+                    const name = (v as string) ?? "";
+                    onAdPncChange(name, emailFor(adPncOptions, name));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select AD (P&C)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AD_PNC.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {adPncOptions.map((option) => (
+                      <SelectItem key={option.name} value={option.name}>
+                        {option.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Hidden field — the AD (P&C)'s email, populated on select. */}
+                <input
+                  type="hidden"
+                  name={`adPncEmail-${request.id}`}
+                  value={request.adPncEmail ?? ""}
+                />
                 {showErrors && !request.adPnc ? (
                   <Text size="xs" className="text-danger">
                     Select an AD (P&amp;C).

@@ -16,8 +16,12 @@ export interface RequestItem {
   id: string;
   /** Programme Centre Head the request is addressed to. */
   pcHead: string | null;
+  /** The selected PC Head's email — populated from the directory on select. */
+  pcHeadEmail: string | null;
   /** Assistant Director (People & Culture) copied on the request. */
   adPnc: string | null;
+  /** The selected AD (P&C)'s email — populated from the directory on select. */
+  adPncEmail: string | null;
   /** When the recipients' response is due. */
   deadline?: Date;
   rows: EducationRow[];
@@ -27,27 +31,18 @@ export interface RequestItem {
   selected: boolean;
 }
 
-// ── Option sets ──────────────────────────────────────────────────────────────
-// Provisional pick-lists for the prototype. Swap for the real directories once a
-// contacts repository exists.
+// ── Recipient directory ──────────────────────────────────────────────────────
 
-/** Programme Centre Heads a request can be addressed to. */
-export const PC_HEADS = [
-  "Tan Wei Ming",
-  "Priya Nair",
-  "Daniel Koh",
-  "Siti Rahman",
-  "Marcus Tan",
-] as const;
-
-/** Assistant Directors (People & Culture) a request can copy. */
-export const AD_PNC = [
-  "Ng Shu Qi",
-  "Benjamin Lee",
-  "Farah Ismail",
-  "Kelvin Ong",
-  "Grace Wong",
-] as const;
+/**
+ * A selectable recipient — a PC Head or AD (P&C) — carrying the email captured
+ * alongside the name. The pickers list these; selecting one stores both the
+ * name (shown) and the email (a hidden field on the request). Sourced from the
+ * users repository (`listUsersByRole`) via the route loader, not hard-coded.
+ */
+export interface Contact {
+  name: string;
+  email: string;
+}
 
 // Education levels are a product-wide constant — see `~/data`.
 export { EDUCATION_LEVELS, type EducationLevel } from "~/data";
@@ -66,7 +61,9 @@ export function emptyRequest(): RequestItem {
   return {
     id: makeId("req"),
     pcHead: null,
+    pcHeadEmail: null,
     adPnc: null,
+    adPncEmail: null,
     deadline: undefined,
     rows: [emptyRow()],
     collapsed: false,

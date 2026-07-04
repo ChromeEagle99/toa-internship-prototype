@@ -49,8 +49,15 @@ export const ProjectRequestSchema = z.object({
   // ── RECIPIENTS (from the form) ──────────────────────────────────────────────
   /** pc_head — the Programme Centre Head the request is addressed to. Required. */
   pcHead: z.string().min(1),
+  /**
+   * pc_head_email — the PC Head's email, captured from the directory selection
+   * (a hidden field on the form). Optional: older requests predate its capture.
+   */
+  pcHeadEmail: z.string().email().optional(),
   /** ad_pnc — the Assistant Director (People & Culture) copied. Required. */
   adPnc: z.string().min(1),
+  /** ad_pnc_email — the AD (P&C)'s email, captured from the directory selection. */
+  adPncEmail: z.string().email().optional(),
   /** deadline — response deadline, DATE as YYYY-MM-DD. Required. */
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a YYYY-MM-DD date."),
 
@@ -82,7 +89,9 @@ export function exampleProjectRequest(
 ): ProjectRequest {
   return {
     pcHead: "Tan Wei Ming",
+    pcHeadEmail: "weiming.tan@dsta.gov.sg",
     adPnc: "Ng Shu Qi",
+    adPncEmail: "shuqi.ng@dsta.gov.sg",
     deadline: "2026-03-31",
     lines: [
       { lineId: newId(), educationLevel: "University", placements: 5 },
@@ -105,7 +114,9 @@ export function exampleProjectRequests(): ProjectRequest[] {
     {
       requestId: "req-aisha-pjc",
       pcHead: "Aisha Rahman",
+      pcHeadEmail: "aisha.rahman@dsta.gov.sg",
       adPnc: "Benjamin Lee",
+      adPncEmail: "benjamin.lee@dsta.gov.sg",
       deadline: "2026-07-28",
       lines: [
         {
@@ -121,7 +132,9 @@ export function exampleProjectRequests(): ProjectRequest[] {
     {
       requestId: "req-priya-ip",
       pcHead: "Priya Nair",
+      pcHeadEmail: "priya.nair@dsta.gov.sg",
       adPnc: "Ng Shu Qi",
+      adPncEmail: "shuqi.ng@dsta.gov.sg",
       deadline: "2026-08-31",
       lines: [
         {
@@ -137,7 +150,9 @@ export function exampleProjectRequests(): ProjectRequest[] {
     {
       requestId: "req-james-uni",
       pcHead: "James Tan",
+      pcHeadEmail: "james.tan@dsta.gov.sg",
       adPnc: "Grace Wong",
+      adPncEmail: "grace.wong@dsta.gov.sg",
       deadline: "2026-07-31",
       lines: [
         { lineId: "req-james-uni-l1", educationLevel: "University", placements: 2 },

@@ -62,6 +62,18 @@ export async function listUsers(): Promise<User[]> {
 }
 
 /**
+ * Directory pick-list: every user holding a given role, e.g. the PC Heads and
+ * AD (P&C)s a project request can be addressed to. Reads as the system identity
+ * (like `resolveUser`/`listUsers`) — it's a bootstrap directory read, not an
+ * actor-gated one, so an IO who lacks the `users` grant can still populate the
+ * form's recipient pickers.
+ */
+export async function listUsersByRole(role: Role): Promise<User[]> {
+  const users = await listUsers();
+  return users.filter((user) => user.role === role);
+}
+
+/**
  * The demo userbase — the identities the "act as" switcher and the login pickers
  * offer. Stable ids so the cookie/pickers survive reseeds (change a person's
  * name/email/role/title freely, but keep their id). `title` is the display
@@ -77,6 +89,19 @@ export function exampleUsers(): User[] {
     { id: "u-adpnc", name: "Ng Shu Qi", email: "shuqi.ng@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
     { id: "u-mentor", name: "Wei Jian Lim", email: "weijian.lim@dsta.gov.sg", role: ROLES.mentor, title: "Mentor" },
     { id: "u-director", name: "Abbey Chua", email: "abbey.chua@dsta.gov.sg", role: ROLES.director, title: "Director" },
+    // Programme Centre Heads — the directory a project request is addressed to.
+    // The Request Project form's "PC Head" picker lists these.
+    { id: "u-pchead-weiming", name: "Tan Wei Ming", email: "weiming.tan@dsta.gov.sg", role: ROLES.pcHead, title: "PC Head" },
+    { id: "u-pchead-priya", name: "Priya Nair", email: "priya.nair@dsta.gov.sg", role: ROLES.pcHead, title: "PC Head" },
+    { id: "u-pchead-daniel", name: "Daniel Koh", email: "daniel.koh@dsta.gov.sg", role: ROLES.pcHead, title: "PC Head" },
+    { id: "u-pchead-siti", name: "Siti Rahman", email: "siti.rahman@dsta.gov.sg", role: ROLES.pcHead, title: "PC Head" },
+    { id: "u-pchead-marcus", name: "Marcus Tan", email: "marcust@dsta.gov.sg", role: ROLES.pcHead, title: "PC Head" },
+    // AD (P&C) directory — the "AD (P&C)" picker on the same form. Ng Shu Qi
+    // (u-adpnc, above) is the one who also signs in; these are addressees too.
+    { id: "u-adpnc-benjamin", name: "Benjamin Lee", email: "benjamin.lee@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
+    { id: "u-adpnc-farah", name: "Farah Ismail", email: "farah.ismail@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
+    { id: "u-adpnc-kelvin", name: "Kelvin Ong", email: "kelvin.ong@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
+    { id: "u-adpnc-grace", name: "Grace Wong", email: "grace.wong@dsta.gov.sg", role: ROLES.adPnc, title: "AD (P&C)" },
     // Applicants — both role `applicant`; the title distinguishes the track.
     { id: "u-applicant-internship", name: "Jenny Aw", email: "jenny.aw@u.nus.edu", role: ROLES.applicant, title: "Internship Applicant" },
     { id: "u-applicant-scholarship", name: "Marcus Tan", email: "marcus.tan@dsta.gov.sg", role: ROLES.applicant, title: "Scholarship Applicant" },

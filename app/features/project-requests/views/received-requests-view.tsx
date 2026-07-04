@@ -81,7 +81,9 @@ function toRequestItem(request: SubmissionRequest, recipient: string): RequestIt
   return {
     id: request.id,
     pcHead: recipient,
+    pcHeadEmail: null,
     adPnc: null,
+    adPncEmail: null,
     deadline: new Date(request.deadline),
     rows: [
       {
