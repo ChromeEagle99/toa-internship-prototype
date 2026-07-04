@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 
-import { ROLE_LABELS, ensureUsersSeeded, isAuthenticated, listUsers } from "~/data";
+import { ALL_ROLES, ROLE_LABELS, ensureUsersSeeded, isAuthenticated, listUsers } from "~/data";
 
 import { getCurrentActor } from "~/auth/current-user.server";
 import { clearActorId, commitActorId } from "~/auth/session.server";
@@ -59,6 +59,13 @@ export async function action({ request }: Route.ActionArgs) {
 export default function ActAs({ loaderData }: Route.ComponentProps) {
   const { users, currentId, next } = loaderData;
 
+  // Group the picker by role (registry order) so it stays scannable as the
+  // userbase grows; drop roles that have no users seeded.
+  const groups = ALL_ROLES.map((role) => ({
+    role,
+    members: users.filter((user) => user.role === role),
+  })).filter((group) => group.members.length > 0);
+
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
@@ -85,33 +92,51 @@ export default function ActAs({ loaderData }: Route.ComponentProps) {
           </Text>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {users.map((user) => {
-            const isCurrent = user.id === currentId;
-            return (
-              <Form method="post" key={user.id}>
-                <input type="hidden" name="userId" value={user.id} />
-                {next ? <input type="hidden" name="next" value={next} /> : null}
-                <button
-                  type="submit"
-                  className={cn(
-                    "flex w-full flex-col items-start gap-1 rounded-md border p-4 text-left transition-colors",
-                    isCurrent
-                      ? "border-accent bg-accent/5"
-                      : "border-border bg-surface hover:bg-bg-muted",
-                  )}
+        <div className="space-y-8">
+          {groups.map(({ role, members }) => (
+            <section key={role} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="semibold"
+                  variant="subtle"
+                  className="uppercase tracking-wide"
                 >
-                  <span className="flex w-full items-center justify-between gap-2">
-                    <span className="font-medium">{user.name}</span>
-                    {isCurrent ? <Badge variant="success">current</Badge> : null}
-                  </span>
-                  <Text size="xs" variant="muted">
-                    {user.title ?? ROLE_LABELS[user.role]} · {user.email}
-                  </Text>
-                </button>
-              </Form>
-            );
-          })}
+                  {ROLE_LABELS[role]}
+                </Text>
+                <Badge variant="subtle">{members.length}</Badge>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {members.map((user) => {
+                  const isCurrent = user.id === currentId;
+                  return (
+                    <Form method="post" key={user.id}>
+                      <input type="hidden" name="userId" value={user.id} />
+                      {next ? <input type="hidden" name="next" value={next} /> : null}
+                      <button
+                        type="submit"
+                        className={cn(
+                          "flex w-full flex-col items-start gap-1 rounded-md border p-4 text-left transition-colors",
+                          isCurrent
+                            ? "border-accent bg-accent/5"
+                            : "border-border bg-surface hover:bg-bg-muted",
+                        )}
+                      >
+                        <span className="flex w-full items-center justify-between gap-2">
+                          <span className="font-medium">{user.name}</span>
+                          {isCurrent ? <Badge variant="success">current</Badge> : null}
+                        </span>
+                        <Text size="xs" variant="muted">
+                          {user.title ?? ROLE_LABELS[user.role]} · {user.email}
+                        </Text>
+                      </button>
+                    </Form>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
 
         <Separator />
