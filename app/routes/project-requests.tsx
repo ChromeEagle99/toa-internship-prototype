@@ -41,8 +41,10 @@ import {
   type RequestStatus,
 } from "~/data";
 import { projectRequestsVariantFor } from "~/features/project-requests/view-for";
-import { ReceivedRequestsView } from "~/features/project-requests/views/received-requests-view";
-import { SAMPLE_REQUESTS as RECEIVED_REQUESTS } from "~/features/projects/submissions-data";
+import {
+  ReceivedRequestsView,
+  type ReceivedRequest,
+} from "~/features/project-requests/views/received-requests-view";
 
 import type { Route } from "./+types/project-requests";
 
@@ -88,9 +90,21 @@ export async function loader({ request }: Route.LoaderArgs) {
     email: dbUser?.email,
   };
 
-  // AD (P&C): the requests their centre has received to fulfil.
+  // AD (P&C): the requests addressed to them. Read every project request the
+  // actor may see, then narrow to the ones whose `adPncEmail` is this AD's
+  // address — the tag the create flow sets is the relation. (The row filter lives
+  // here because the actor carries no email for a policy-level `where` to match.)
   if (variant === "received") {
-    return { variant, actor, user, requests: RECEIVED_REQUESTS };
+    const res = await projectRequestsRepository.as(actor).list();
+    const addressed =
+      res.ok && user.email
+        ? res.data.filter(
+            (request) =>
+              request.adPncEmail?.toLowerCase() === user.email!.toLowerCase(),
+          )
+        : [];
+    const requests = await Promise.all(addressed.map(toReceivedRequest));
+    return { variant, actor, user, requests };
   }
 
   // IO / IO Admin: the requests they've sent to Programme Centres. Read live from
@@ -139,6 +153,33 @@ function toRow(request: ProjectRequest): ProjectRequestRow {
     requestDate: request.createdAt ? request.createdAt.slice(0, 10) : "",
     deadline: request.deadline,
     status: request.status,
+  };
+}
+
+/**
+ * Adapt a stored `ProjectRequest` into the card the AD (P&C) recipient sees.
+ * Resolves the requester's name/email from `requestedBy` (falling back to the
+ * email captured on the request), and totals the requested placements.
+ */
+async function toReceivedRequest(request: ProjectRequest): Promise<ReceivedRequest> {
+  const requester = request.requestedBy
+    ? await resolveUser(request.requestedBy)
+    : null;
+  return {
+    id: request.requestId,
+    requestedBy: requester?.name ?? "Internship Office",
+    requestedByEmail: request.requestedByEmail ?? requester?.email,
+    lines: request.lines.map((line) => ({
+      level: line.educationLevel,
+      slots: line.placements,
+    })),
+    placementsNeeded: request.lines.reduce((sum, line) => sum + line.placements, 0),
+    // No submissions repository yet, so nothing is fulfilled: every request is
+    // still awaiting a response.
+    previouslySubmitted: 0,
+    sentDate: request.createdAt ? request.createdAt.slice(0, 10) : "",
+    deadline: request.deadline,
+    submitted: false,
   };
 }
 

@@ -148,6 +148,10 @@ export async function action({ request }: Route.ActionArgs) {
 
   const now = new Date().toISOString();
 
+  // The requesting officer's contact, captured alongside their id so the
+  // recipient has a durable reply-to on the request they receive.
+  const officer = await resolveUser(actor.id);
+
   // Map each form request onto the ProjectRequest schema and persist it via the
   // repository. "Confirm Send" marks them as sent. One create per request; the
   // first failure stops and reports.
@@ -166,6 +170,7 @@ export async function action({ request }: Route.ActionArgs) {
       requestId: newId(),
       status: "sent",
       requestedBy: actor.id,
+      requestedByEmail: officer?.email,
       createdAt: now,
     };
 

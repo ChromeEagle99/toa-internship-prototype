@@ -21,8 +21,6 @@ import {
 } from "~/components/project-request";
 import type { Actor } from "~/data";
 
-import type { SubmissionRequest } from "~/features/projects/submissions-data";
-
 /**
  * The AD (P&C) Project Requests page: the requests their Programme Centre has
  * received from the Internship Office, split into those still awaiting a response
@@ -34,14 +32,45 @@ import type { SubmissionRequest } from "~/features/projects/submissions-data";
  * A self-contained page that owns its Shell chrome, like every feature view.
  */
 
+/** One requested education level within a received request. */
+export interface ReceivedRequestLine {
+  level: string;
+  slots: number;
+}
+
+/**
+ * A project request as the AD (P&C) recipient sees it — the route's loader adapts
+ * each stored `ProjectRequest` addressed to them into this shape (resolving the
+ * requester's name/email from `requestedBy`). One card per request.
+ */
+export interface ReceivedRequest {
+  id: string;
+  /** Name of the officer who raised it, resolved from `requestedBy`. */
+  requestedBy: string;
+  /** The officer's email — the reply-to shown on the request. */
+  requestedByEmail?: string;
+  /** One row per requested education level. */
+  lines: ReceivedRequestLine[];
+  /** Total placements requested across every line. */
+  placementsNeeded: number;
+  /** Projects already submitted against it (0 until a submissions repository exists). */
+  previouslySubmitted: number;
+  /** When the request was sent. YYYY-MM-DD. */
+  sentDate: string;
+  /** Response deadline. YYYY-MM-DD. */
+  deadline: string;
+  /** Whether the centre has fulfilled it. Always false until submissions are tracked. */
+  submitted: boolean;
+}
+
 export interface ReceivedRequestsViewProps {
   actor: Actor;
   user: ShellUser;
-  requests: SubmissionRequest[];
+  requests: ReceivedRequest[];
 }
 
-/** A request is fulfilled once its status is "submitted"; everything else awaits a response. */
-const isSubmitted = (request: SubmissionRequest) => request.status === "submitted";
+/** A request is fulfilled once it's been submitted; everything else awaits a response. */
+const isSubmitted = (request: ReceivedRequest) => request.submitted;
 
 /** A readable date, e.g. "30 Jul 2026". */
 function formatDate(iso: string): string {
@@ -77,7 +106,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 /** Adapt a received request into the shape the shared email preview expects. */
-function toRequestItem(request: SubmissionRequest, recipient: string): RequestItem {
+function toRequestItem(request: ReceivedRequest, recipient: string): RequestItem {
   return {
     id: request.id,
     pcHead: recipient,
@@ -85,13 +114,11 @@ function toRequestItem(request: SubmissionRequest, recipient: string): RequestIt
     adPnc: null,
     adPncEmail: null,
     deadline: new Date(request.deadline),
-    rows: [
-      {
-        id: `${request.id}-p0`,
-        level: request.educationLevel,
-        placements: request.placementsNeeded,
-      },
-    ],
+    rows: request.lines.map((line, index) => ({
+      id: `${request.id}-p${index}`,
+      level: line.level,
+      placements: line.slots,
+    })),
     collapsed: false,
     selected: false,
   };
@@ -102,7 +129,7 @@ function RequestCard({
   request,
   onViewEmail,
 }: {
-  request: SubmissionRequest;
+  request: ReceivedRequest;
   onViewEmail: () => void;
 }) {
   const submitted = isSubmitted(request);
@@ -118,8 +145,19 @@ function RequestCard({
           <Badge variant={status.variant}>{status.label}</Badge>
           <Text size="sm" variant="muted">
             Request from{" "}
-            <span className="font-medium text-fg">{request.requestedBy}</span> · sent{" "}
-            {formatDate(request.sentDate)}
+            <span className="font-medium text-fg">{request.requestedBy}</span>
+            {request.requestedByEmail ? (
+              <>
+                {" "}
+                <a
+                  href={`mailto:${request.requestedByEmail}`}
+                  className="text-accent transition-colors hover:underline"
+                >
+                  ({request.requestedByEmail})
+                </a>
+              </>
+            ) : null}{" "}
+            · sent {formatDate(request.sentDate)}
           </Text>
         </div>
         <button
@@ -135,16 +173,20 @@ function RequestCard({
       <Separator className="my-4" />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-        {/* What's being asked for. */}
+        {/* What's being asked for — one line per education level. */}
         <div className="lg:w-64 lg:shrink-0">
           <FieldLabel>Placements requested</FieldLabel>
-          <div className="mt-2 flex items-center justify-between gap-4">
-            <Text size="sm" className="text-fg">
-              {request.educationLevel}
-            </Text>
-            <Text size="sm" variant="muted">
-              {request.placementsNeeded} slot{request.placementsNeeded === 1 ? "" : "s"}
-            </Text>
+          <div className="mt-2 space-y-1.5">
+            {request.lines.map((line, index) => (
+              <div key={index} className="flex items-center justify-between gap-4">
+                <Text size="sm" className="text-fg">
+                  {line.level}
+                </Text>
+                <Text size="sm" variant="muted">
+                  {line.slots} slot{line.slots === 1 ? "" : "s"}
+                </Text>
+              </div>
+            ))}
           </div>
         </div>
 

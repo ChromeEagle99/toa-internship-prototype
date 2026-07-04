@@ -72,6 +72,14 @@ export const ProjectRequestSchema = z.object({
   status: z.enum(REQUEST_STATUSES).default("draft"),
   /** requested_by — FK → User (the signed-in officer). */
   requestedBy: z.string().optional(),
+  /**
+   * requested_by_email — the requesting officer's email, captured at create time
+   * from the signed-in user. Gives the recipient a durable reply-to / "from"
+   * address (it survives even if the officer's account later changes), and is the
+   * counterpart to `pcHeadEmail` / `adPncEmail`. Optional: older requests predate
+   * its capture.
+   */
+  requestedByEmail: z.string().email().optional(),
   /** created_at — TIMESTAMP, Auto (ISO string). */
   createdAt: z.string().optional(),
 });
@@ -127,6 +135,7 @@ export function exampleProjectRequests(): ProjectRequest[] {
       ],
       status: "sent",
       requestedBy: "u-io",
+      requestedByEmail: "rachel.koh@dsta.gov.sg",
       createdAt: "2026-07-03T00:00:00.000Z",
     },
     {
@@ -145,6 +154,7 @@ export function exampleProjectRequests(): ProjectRequest[] {
       ],
       status: "sent",
       requestedBy: "u-io",
+      requestedByEmail: "rachel.koh@dsta.gov.sg",
       createdAt: "2026-07-03T00:00:00.000Z",
     },
     {
@@ -160,6 +170,7 @@ export function exampleProjectRequests(): ProjectRequest[] {
       ],
       status: "sent",
       requestedBy: "u-io",
+      requestedByEmail: "rachel.koh@dsta.gov.sg",
       createdAt: "2026-07-03T00:00:00.000Z",
     },
   ];

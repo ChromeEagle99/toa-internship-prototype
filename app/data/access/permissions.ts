@@ -92,6 +92,11 @@ export const POLICY: Policy = {
     // nothing else. No applications/programmes grant — so neither the data layer
     // nor the side-nav surfaces those to them. Widen here if their remit grows.
     { resource: "projects", actions: ["read", "list"] },
+    // They also see the project requests addressed to them. The actor carries no
+    // email, so the row-level match (adPncEmail === the signed-in AD's address)
+    // can't be expressed here — the grant is resource-wide and the received-
+    // requests loader narrows the list to their own address.
+    { resource: "project-requests", actions: ["read", "list"] },
   ],
   [ROLES.director]: [
     // Director: read-wide oversight across every resource.
