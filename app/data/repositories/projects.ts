@@ -60,8 +60,15 @@ export const ProjectSchema = z.object({
   intakeId: z.string().nullish(),
   /** review_status — ENUM, System-set; value set TBD. */
   reviewStatus: z.string().optional(),
-  /** submitted_by — FK → User (AD). */
+  /** submitted_by — FK → User (the AD (P&C) who created the project). */
   submittedBy: z.string().optional(),
+  /**
+   * submitted_by_email — the submitting AD (P&C)'s email, captured at create time
+   * from the signed-in user. Gives reviewers a durable reply-to that survives the
+   * AD's account changing; the counterpart to `requestedByEmail` on a project
+   * request. Optional: older projects predate its capture.
+   */
+  submittedByEmail: z.string().email().optional(),
   /** reviewed_by — FK → User (IO Admin). */
   reviewedBy: z.string().optional(),
   /** submitted_at — TIMESTAMP, Auto (ISO string). */
@@ -97,6 +104,8 @@ export function exampleProject(overrides: Partial<Project> = {}): Project {
     projectId: newId(),
     intakeId: null,
     reviewStatus: "pending",
+    submittedBy: "u-adpnc",
+    submittedByEmail: "shuqi.ng@dsta.gov.sg",
     submittedAt: "2026-01-15T00:00:00.000Z",
     ...overrides,
   };

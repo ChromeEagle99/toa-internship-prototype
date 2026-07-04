@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { z } from "zod";
 import {
   ArrowLeft,
   ArrowRight,
@@ -486,6 +487,35 @@ export function CreateProjectWizardView({
     educationLevel !== "" &&
     requestedLevels.length > 0 &&
     !requestedLevels.includes(educationLevel);
+
+  // Hard gate: every `<Required />` field on the current step must be complete
+  // before the AD (P&C) can advance. Mirrors the required markers in the UI —
+  // the matching-tag optionality in the data schema doesn't apply here, the form
+  // asks for all of them. The mentor email must also be a valid address.
+  const mentorEmailValid = z.string().email().safeParse(mentorEmail.trim()).success;
+  const stepComplete: boolean[] = [
+    // Step 1 — Project Details
+    title.trim() !== "" &&
+      scope.trim() !== "" &&
+      pc !== "" &&
+      educationLevel !== "" &&
+      techDomain !== "" &&
+      emergingArea !== "",
+    // Step 2 — Project Requirements
+    disciplines.length > 0 &&
+      skills.length > 0 &&
+      Number(slots) >= 1 &&
+      duration !== "" &&
+      Boolean(period.start && period.end),
+    // Step 3 — Mentor Information
+    mentorName.trim() !== "" &&
+      mentorAppointment.trim() !== "" &&
+      mentorEmailValid &&
+      mentorWriteup.trim() !== "",
+    // Step 4 — Review and Confirm: the declaration is the only gate.
+    declared,
+  ];
+  const canProceed = stepComplete[step];
 
   function addSkill() {
     const next = skillDraft.trim();
@@ -978,7 +1008,7 @@ export function CreateProjectWizardView({
               <Save className="size-4" />
               Save Draft
             </Button>
-            <Button type="button" onClick={handleNext}>
+            <Button type="button" onClick={handleNext} disabled={!canProceed}>
               {isLastStep ? (
                 <>
                   <CircleCheck className="size-4" />

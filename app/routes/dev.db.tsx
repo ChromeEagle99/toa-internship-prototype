@@ -143,6 +143,8 @@ const SEED_PROJECTS: Partial<Project>[] = [
     mentorDesignation: "Principal Cybersecurity Engineer",
     reviewStatus: "pending",
     intakeId: "INT-JC-2026",
+    submittedBy: "u-adpnc-grace",
+    submittedByEmail: "grace.wong@dsta.gov.sg",
   },
   {
     projectId: "proj-rf-frequency",
@@ -180,6 +182,8 @@ const SEED_PROJECTS: Partial<Project>[] = [
     mentorDesignation: "Lead Cybersecurity Analyst",
     reviewStatus: "approved",
     intakeId: "INT-UNI-2026",
+    submittedBy: "u-adpnc-grace",
+    submittedByEmail: "grace.wong@dsta.gov.sg",
   },
   // ── Allocated Projects ──
   {
@@ -205,6 +209,8 @@ const SEED_PROJECTS: Partial<Project>[] = [
     mentorDesignation: "Senior Network Engineer",
     reviewStatus: "allocated",
     intakeId: "INT-JC-2026",
+    submittedBy: "u-adpnc-grace",
+    submittedByEmail: "grace.wong@dsta.gov.sg",
   },
   {
     projectId: "proj-ml-anomaly",
@@ -217,6 +223,8 @@ const SEED_PROJECTS: Partial<Project>[] = [
     mentorDesignation: "Data Scientist",
     reviewStatus: "allocated",
     intakeId: "INT-PJC-2026",
+    submittedBy: "u-adpnc-grace",
+    submittedByEmail: "grace.wong@dsta.gov.sg",
   },
 ];
 
