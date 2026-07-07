@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Layers,
   ListChecks,
+  MoreHorizontal,
   PanelsTopLeft,
   Search,
   SlidersHorizontal,
@@ -82,6 +83,13 @@ const EXPERIMENTS = [
     title: "Project requirement fields",
     description:
       "The two reusable fields from the Create Project wizard's Project Requirements step: a new whole-month range picker for the internship window, and the multi-select upgraded with checkbox rows and a 'N selected · Clear all' footer.",
+  },
+  {
+    to: "/playground/pagination",
+    icon: MoreHorizontal,
+    title: "Pagination",
+    description:
+      "Our own Pager component, built on the PRIZM Pagination primitives: a controlled page / totalPages / onPageChange API that owns range truncation and disabled edges, with props for compact, first/last-jump, and jump-to-page. Shown driving a real applicants table — both hand-wired with the raw primitives and via Pager with rows-per-page and jump-to-page.",
   },
   {
     to: "/playground/gantt",

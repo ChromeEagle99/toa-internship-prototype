@@ -39,6 +39,7 @@ export default [
     "routes/playground.project-requirement-fields.tsx",
   ),
   route("playground/gantt", "routes/playground.gantt.tsx"),
+  route("playground/pagination", "routes/playground.pagination.tsx"),
   route("dev/db", "routes/dev.db.tsx"),
   route("login/applicant", "routes/login.applicant.tsx"),
   route("login/corporate", "routes/login.corporate.tsx"),
