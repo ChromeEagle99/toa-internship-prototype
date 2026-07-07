@@ -148,7 +148,7 @@ function JumpInline({
         htmlFor="pager-jump-inline"
         className="whitespace-nowrap text-sm text-fg-muted"
       >
-        Go to page
+        Go to
       </label>
       <Input
         id="pager-jump-inline"
@@ -323,7 +323,9 @@ export function Pager({
   const items = hideNumbers ? [] : paginationRange(page, totalPages, siblingCount);
 
   const nav = (
-    <Pagination className={jumpTo ? undefined : className}>
+    // When paired with a jump control the nav shouldn't stretch — the wrapper
+    // owns the spacing — so collapse the PRIZM default `w-full` to `w-auto`.
+    <Pagination className={jumpTo ? "mx-0 w-auto" : className}>
       <PaginationContent>
         {showFirstLast && (
           <PaginationItem>

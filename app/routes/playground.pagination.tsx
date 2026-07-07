@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router";
 
@@ -33,6 +33,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -77,8 +78,18 @@ const APPLICANTS: Applicant[] = Array.from({ length: 43 }, (_, i) => ({
   status: STATUSES[i % STATUSES.length],
 }));
 
-/** The head + body for a page of applicants — shared by both table examples. */
-function ApplicantsTable({ rows }: { rows: Applicant[] }) {
+/**
+ * The head + body for a page of applicants — shared by both table examples.
+ * When `footer` is passed, it renders inside a PRIZM `TableFooter` (`<tfoot>`)
+ * spanning every column, so the pagination lives in the table's own footer.
+ */
+function ApplicantsTable({
+  rows,
+  footer,
+}: {
+  rows: Applicant[];
+  footer?: ReactNode;
+}) {
   return (
     <Table>
       <TableHeader>
@@ -101,6 +112,15 @@ function ApplicantsTable({ rows }: { rows: Applicant[] }) {
           </TableRow>
         ))}
       </TableBody>
+      {footer && (
+        <TableFooter>
+          <TableRow className="hover:bg-transparent">
+            <TableCell colSpan={4} className="px-4 py-3 font-normal">
+              {footer}
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      )}
     </Table>
   );
 }
@@ -136,6 +156,8 @@ export default function PaginationDemo() {
     primPage * PRIM_SIZE,
   );
   const primItems = paginationRange(primPage, primTotal);
+  const primFirstRow = (primPage - 1) * PRIM_SIZE + 1;
+  const primLastRow = Math.min(primPage * PRIM_SIZE, APPLICANTS.length);
 
   // Table with our Pager: rows-per-page select + jump-to-page.
   const [pagerPage, setPagerPage] = useState(1);
@@ -150,16 +172,6 @@ export default function PaginationDemo() {
   );
   const pagerFirstRow = (pagerPageClamped - 1) * pagerSizeNum + 1;
   const pagerLastRow = Math.min(pagerPageClamped * pagerSizeNum, APPLICANTS.length);
-
-  // Table footer: page derived from row count and the chosen page size.
-  const [footerPage, setFooterPage] = useState(1);
-  const [pageSize, setPageSize] = useState("10");
-  const totalRows = 97;
-  const size = Number(pageSize);
-  const footerTotal = Math.max(1, Math.ceil(totalRows / size));
-  const footerPageClamped = Math.min(footerPage, footerTotal);
-  const firstRow = (footerPageClamped - 1) * size + 1;
-  const lastRow = Math.min(footerPageClamped * size, totalRows);
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -299,72 +311,89 @@ export default function PaginationDemo() {
             <Text size="sm" variant="muted">
               A real paginated table: slice the rows by page in the route, and
               hand-wire the PRIZM <code className="text-fg">Pagination</code>{" "}
-              primitives underneath. Fixed page size of {PRIM_SIZE}.
+              primitives into the table's own footer (PRIZM{" "}
+              <code className="text-fg">TableFooter</code>), with a row-count
+              summary on the left. Fixed page size of {PRIM_SIZE}.
             </Text>
           </div>
           <Separator />
 
           <Card>
-            <CardContent className="space-y-4 p-0">
-              <ApplicantsTable rows={primRows} />
-              <div className="px-4 pb-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        aria-disabled={primPage === 1 || undefined}
-                        className={
-                          primPage === 1
-                            ? "pointer-events-none opacity-50"
-                            : undefined
-                        }
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPrimPage((p) => Math.max(1, p - 1));
-                        }}
-                      />
-                    </PaginationItem>
+            <CardContent className="p-0">
+              <ApplicantsTable
+                rows={primRows}
+                footer={
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <Text size="sm" variant="muted">
+                      Showing{" "}
+                      <span className="font-medium text-fg">
+                        {primFirstRow}–{primLastRow}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium text-fg">
+                        {APPLICANTS.length}
+                      </span>
+                    </Text>
 
-                    {primItems.map((item, i) =>
-                      item === "ellipsis" ? (
-                        <PaginationItem key={`e-${i}`}>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem key={item}>
-                          <PaginationLink
+                    <Pagination className="mx-0 w-auto justify-end">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
                             href="#"
-                            isActive={item === primPage}
+                            aria-disabled={primPage === 1 || undefined}
+                            className={
+                              primPage === 1
+                                ? "pointer-events-none opacity-50"
+                                : undefined
+                            }
                             onClick={(e) => {
                               e.preventDefault();
-                              setPrimPage(item);
+                              setPrimPage((p) => Math.max(1, p - 1));
                             }}
-                          >
-                            {item}
-                          </PaginationLink>
+                          />
                         </PaginationItem>
-                      ),
-                    )}
 
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        aria-disabled={primPage === primTotal || undefined}
-                        className={
-                          primPage === primTotal
-                            ? "pointer-events-none opacity-50"
-                            : undefined
-                        }
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPrimPage((p) => Math.min(primTotal, p + 1));
-                        }}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
+                        {primItems.map((item, i) =>
+                          item === "ellipsis" ? (
+                            <PaginationItem key={`e-${i}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          ) : (
+                            <PaginationItem key={item}>
+                              <PaginationLink
+                                href="#"
+                                isActive={item === primPage}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setPrimPage(item);
+                                }}
+                              >
+                                {item}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ),
+                        )}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            aria-disabled={primPage === primTotal || undefined}
+                            className={
+                              primPage === primTotal
+                                ? "pointer-events-none opacity-50"
+                                : undefined
+                            }
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setPrimPage((p) => Math.min(primTotal, p + 1));
+                            }}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                }
+              />
             </CardContent>
           </Card>
         </section>
@@ -376,9 +405,9 @@ export default function PaginationDemo() {
               Table + our Pager
             </Heading>
             <Text size="sm" variant="muted">
-              The same table driven by <code className="text-fg">Pager</code>{" "}
-              with two additions: a rows-per-page{" "}
-              <code className="text-fg">Select</code>, and{" "}
+              The same table, but everything lives in the footer: a row-count
+              summary, a rows-per-page <code className="text-fg">Select</code>,
+              the <code className="text-fg">Pager</code> nav, and{" "}
               <code className="text-fg">jumpTo</code> for landing on a page
               directly. Pick a jump style below — they all drive the same table.
               Changing the page size resets to page one.
@@ -413,55 +442,60 @@ export default function PaginationDemo() {
           </div>
 
           <Card>
-            <CardContent className="space-y-4 p-0">
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
-                <Text size="sm" variant="muted">
-                  Showing{" "}
-                  <span className="font-medium text-fg">
-                    {pagerFirstRow}–{pagerLastRow}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-medium text-fg">
-                    {APPLICANTS.length}
-                  </span>{" "}
-                  applications
-                </Text>
-                <div className="flex items-center gap-2">
-                  <Text size="sm" variant="muted">
-                    Rows per page
-                  </Text>
-                  <Select
-                    value={pagerSize}
-                    onValueChange={(value) => {
-                      setPagerSize(value as string);
-                      setPagerPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="h-9 w-[72px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["5", "8", "10", "20"].map((n) => (
-                        <SelectItem key={n} value={n}>
-                          {n}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <CardContent className="p-0">
+              <ApplicantsTable
+                rows={pagerRows}
+                footer={
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <Text size="sm" variant="muted" className="shrink-0">
+                      Showing{" "}
+                      <span className="font-medium text-fg">
+                        {pagerFirstRow}–{pagerLastRow}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium text-fg">
+                        {APPLICANTS.length}
+                      </span>{" "}
+                      applications
+                    </Text>
 
-              <ApplicantsTable rows={pagerRows} />
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 lg:justify-end">
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Text size="sm" variant="muted" className="whitespace-nowrap">
+                          Rows per page
+                        </Text>
+                        <Select
+                          value={pagerSize}
+                          onValueChange={(value) => {
+                            setPagerSize(value as string);
+                            setPagerPage(1);
+                          }}
+                        >
+                          <SelectTrigger className="h-9 w-[68px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["5", "8", "10", "20"].map((n) => (
+                              <SelectItem key={n} value={n}>
+                                {n}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-              <div className="px-4 pb-4">
-                <Pager
-                  page={pagerPageClamped}
-                  totalPages={pagerTotal}
-                  onPageChange={setPagerPage}
-                  showFirstLast
-                  jumpTo={jumpVariant}
-                />
-              </div>
+                      <Pager
+                        page={pagerPageClamped}
+                        totalPages={pagerTotal}
+                        onPageChange={setPagerPage}
+                        showLabels={false}
+                        jumpTo={jumpVariant}
+                        className="mx-0 w-auto sm:justify-start"
+                      />
+                    </div>
+                  </div>
+                }
+              />
             </CardContent>
           </Card>
         </section>
@@ -544,73 +578,6 @@ export default function PaginationDemo() {
                 onPageChange={setJump}
                 showFirstLast
               />
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Table footer */}
-        <section className="space-y-4">
-          <div className="space-y-1">
-            <Heading as="h2" size="lg">
-              Table footer
-            </Heading>
-            <Text size="sm" variant="muted">
-              The enterprise workhorse: a row-count summary, a page-size{" "}
-              <code className="text-fg">Select</code>, and an icon-only{" "}
-              <code className="text-fg">Pager</code> (
-              <code className="text-fg">hideNumbers</code> +{" "}
-              <code className="text-fg">showLabels={"{false}"}</code>). Changing
-              the page size recomputes the range and resets to page one.
-            </Text>
-          </div>
-          <Separator />
-
-          <Card>
-            <CardContent>
-              <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                <Text size="sm" variant="muted">
-                  Showing{" "}
-                  <span className="font-medium text-fg">
-                    {firstRow}–{lastRow}
-                  </span>{" "}
-                  of <span className="font-medium text-fg">{totalRows}</span>
-                </Text>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Text size="sm" variant="muted">
-                      Rows per page
-                    </Text>
-                    <Select
-                      value={pageSize}
-                      onValueChange={(value) => {
-                        setPageSize(value as string);
-                        setFooterPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="h-9 w-[72px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {["10", "20", "50"].map((n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Pager
-                    page={footerPageClamped}
-                    totalPages={footerTotal}
-                    onPageChange={setFooterPage}
-                    hideNumbers
-                    showLabels={false}
-                    className="mx-0 w-auto"
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
         </section>
