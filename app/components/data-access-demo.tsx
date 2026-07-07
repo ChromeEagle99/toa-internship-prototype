@@ -57,7 +57,7 @@ const ACTORS: { key: string; actor: Actor }[] = [
   { key: "bob", actor: { id: "applicant-bob", role: ROLES.applicant } },
   { key: "io", actor: { id: "io-jneo", role: ROLES.internshipOfficer } },
   { key: "ioadmin", actor: { id: "ioadmin-tan", role: ROLES.ioAdmin } },
-  { key: "pdpnc", actor: { id: "pnc-lim", role: ROLES.pdPnc } },
+  { key: "adpnc", actor: { id: "pnc-lim", role: ROLES.adPnc } },
   { key: "director", actor: { id: "director-wong", role: ROLES.director } },
 ];
 

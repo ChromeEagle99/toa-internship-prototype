@@ -11,7 +11,7 @@ The storage backend is **not decided yet**. The prototype used `localStorage`;
 the production system may end up on a REST API, a database, or something else.
 This layer exists so that decision can be deferred and later changed **in one
 place** without rewriting features. It also enforces **role-based access**:
-different roles (Applicant, Internship Officer, IO Admin, PD P&C, Director, …)
+different roles (Applicant, Internship Officer, IO Admin, AD (P&C), Director, …)
 can see and do different things, and that is enforced here, not sprinkled across
 the UI.
 

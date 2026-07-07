@@ -1,9 +1,15 @@
 import {
   ArrowRight,
+  BookOpen,
   CalendarRange,
   Database,
+  GanttChartSquare,
   LayoutDashboard,
   Layers,
+  ListChecks,
+  PanelsTopLeft,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -20,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 
 import { ThemeToggle } from "~/components/theme-toggle";
+
 
 export function meta() {
   return [
@@ -56,11 +63,53 @@ const EXPERIMENTS = [
       "A start/end date-range picker composed from PRIZM Calendar, Popover, and Button, shown standalone and then editing ranges inside a table cell.",
   },
   {
+    to: "/playground/searchable-dropdown",
+    icon: Search,
+    title: "Searchable dropdown",
+    description:
+      "A click-to-open, type-to-filter dropdown built on the PRIZM Combobox compound component, shown as a single-select owner picker and a multi-select label picker.",
+  },
+  {
+    to: "/playground/month-multi-select",
+    icon: ListChecks,
+    title: "Month & multi-select",
+    description:
+      "Two Logistics-form fields composed from PRIZM primitives where no shipped component fits: a chip-based multi-select with a closed 'N selected' trigger, and a month/year picker with a min constraint for start/end ranges.",
+  },
+  {
+    to: "/playground/project-requirement-fields",
+    icon: SlidersHorizontal,
+    title: "Project requirement fields",
+    description:
+      "The two reusable fields from the Create Project wizard's Project Requirements step: a new whole-month range picker for the internship window, and the multi-select upgraded with checkbox rows and a 'N selected · Clear all' footer.",
+  },
+  {
+    to: "/playground/gantt",
+    icon: GanttChartSquare,
+    title: "Gantt chart",
+    description:
+      "An interactive, flexible timeline built as a <Gantt> compound component: drag bars to move, drag edges to resize, switch day/week/month zoom, with milestones, progress fills, selection, and edits lifted out via onItemChange.",
+  },
+  {
+    to: "/playground/shell",
+    icon: PanelsTopLeft,
+    title: "Application shell",
+    description:
+      "The app chrome: a sticky, role-aware side-nav, a sticky header with search and a user menu, and a main content slot. Nav items are filtered by the same policy the data layer enforces — sign in as different roles to see them change.",
+  },
+  {
     to: "/playground/dashboard",
     icon: LayoutDashboard,
     title: "Customisable dashboard",
     description:
       "A draggable, resizable widget dashboard on react-grid-layout: toggle edit mode to rearrange, resize, add, or remove widgets, with per-widget minimum sizes, a pinned banner, and layout saved per device.",
+  },
+  {
+    to: "/playground/programmes",
+    icon: BookOpen,
+    title: "Guarded page",
+    description:
+      "A worked example of the authorisation policy enforced at two layers: a page-level guard that 403s roles without access before any data loads, and a data-level repository that returns only the rows the acting identity may read. Switch identity to see both respond.",
   },
 ];
 
@@ -68,7 +117,7 @@ export default function Playground() {
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <Heading as="h1" size="2xl">
               Playground
@@ -81,7 +130,7 @@ export default function Playground() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-8 px-6 py-10">
+      <main className="mx-auto max-w-5xl space-y-8 px-6 py-10">
         <section className="space-y-3">
           <Heading as="h2" size="lg">
             Experiments
@@ -91,9 +140,9 @@ export default function Playground() {
           </Text>
           <Separator />
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {EXPERIMENTS.map(({ to, icon: Icon, title, description }) => (
-              <Card key={to}>
+              <Card key={to} className="flex h-full flex-col">
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Icon className="h-5 w-5 text-accent" />
@@ -101,7 +150,7 @@ export default function Playground() {
                   </div>
                   <CardDescription>{description}</CardDescription>
                 </CardHeader>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to={to} className={buttonVariants({ variant: "solid" })}>
                     Open
                     <ArrowRight />
